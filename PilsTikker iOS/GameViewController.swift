@@ -17,6 +17,11 @@ class GameViewController: UIViewController {
     private var shopView: UIView!
     private var isShopOpen: Bool = false
     
+    // Settings UI elements
+    private var settingsButton: UIButton!
+    private var settingsView: UIView!
+    private var isSettingsOpen: Bool = false
+    
     // Timer voor passieve inkomsten
     private var gameTimer: Timer?
     
@@ -55,6 +60,7 @@ class GameViewController: UIViewController {
         setupUI()
         setupFloatingItemsAnimation()
         setupShopUI()
+        setupSettingsUI()
         setupTimer()
         
         // Set up autosave
@@ -84,7 +90,7 @@ class GameViewController: UIViewController {
             let maxOfflineSeconds = maxOfflineMinutes * 60.0 // Convert to seconds
             
             // Only calculate offline earnings if elapsed time is positive and within the limit
-            if elapsedSeconds > 0 && elapsedSeconds >= maxOfflineSeconds && (bierFlesCount > 0 || kratCount > 0 || bierFustCount > 0) {
+            if elapsedSeconds >= maxOfflineSeconds && (bierFlesCount > 0 || kratCount > 0 || bierFustCount > 0) {
                 // Add offline production (capped at 30 minutes)
                 let offlineProduction = (Double(bierFlesCount) * 0.1 +
                                        Double(kratCount) * 0.3 +
@@ -300,6 +306,7 @@ class GameViewController: UIViewController {
             }
         }
     }
+    
     // MARK: - UI Setup
     
     private func setupUI() {
@@ -331,14 +338,6 @@ class GameViewController: UIViewController {
         // Tap gesture toevoegen
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         imageView.addGestureRecognizer(tapGesture)
-        
-        // Reset knop toevoegen (for testing)
-        let resetButton = UIButton(type: .system)
-        resetButton.frame = CGRect(x: 10, y: 30, width: 60, height: 30)
-        resetButton.setTitle("Reset", for: .normal)
-        resetButton.setTitleColor(.red, for: .normal)
-        resetButton.addTarget(self, action: #selector(resetGame), for: .touchUpInside)
-        view.addSubview(resetButton)
         
         updateUI()
     }
@@ -425,6 +424,231 @@ class GameViewController: UIViewController {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap(_:)))
         tapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(tapGesture)
+    }
+    
+    // MARK: - Settings UI Setup
+    
+    private func setupSettingsUI() {
+        // Create settings button in top right corner
+        let buttonSize: CGFloat = 40
+        let padding: CGFloat = 20
+        
+        settingsButton = UIButton(type: .system)
+        settingsButton.frame = CGRect(
+            x: view.bounds.width - buttonSize - padding,
+            y: padding + 40, // Below status bar
+            width: buttonSize,
+            height: buttonSize
+        )
+        settingsButton.backgroundColor = UIColor.brown.withAlphaComponent(0.8)
+        settingsButton.layer.cornerRadius = buttonSize / 2
+        settingsButton.setImage(UIImage(systemName: "gear"), for: .normal)
+        settingsButton.tintColor = .white
+        settingsButton.addTarget(self, action: #selector(toggleSettings), for: .touchUpInside)
+        view.addSubview(settingsButton)
+        
+        // Create full-screen settings view (initially hidden)
+        settingsView = UIView(frame: view.bounds)
+        settingsView.backgroundColor = UIColor.black.withAlphaComponent(0.9)
+        settingsView.alpha = 0
+        settingsView.isHidden = true
+        view.addSubview(settingsView)
+        
+        setupSettingsContent()
+    }
+    
+    private func setupSettingsContent() {
+        // Settings container
+        let containerView = UIView()
+        containerView.backgroundColor = UIColor(white: 0.95, alpha: 1.0)
+        containerView.layer.cornerRadius = 20
+        containerView.layer.shadowColor = UIColor.black.cgColor
+        containerView.layer.shadowOffset = CGSize(width: 0, height: 5)
+        containerView.layer.shadowOpacity = 0.3
+        containerView.layer.shadowRadius = 10
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        settingsView.addSubview(containerView)
+        
+        // Center the container
+        NSLayoutConstraint.activate([
+            containerView.centerXAnchor.constraint(equalTo: settingsView.centerXAnchor),
+            containerView.centerYAnchor.constraint(equalTo: settingsView.centerYAnchor),
+            containerView.widthAnchor.constraint(equalToConstant: 300),
+            containerView.heightAnchor.constraint(equalToConstant: 500)
+        ])
+        
+        // Close button
+        let closeButton = UIButton(type: .system)
+        closeButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        closeButton.tintColor = .gray
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.addTarget(self, action: #selector(toggleSettings), for: .touchUpInside)
+        containerView.addSubview(closeButton)
+        
+        NSLayoutConstraint.activate([
+            closeButton.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 15),
+            closeButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -15),
+            closeButton.widthAnchor.constraint(equalToConstant: 30),
+            closeButton.heightAnchor.constraint(equalToConstant: 30)
+        ])
+        
+        // Settings title
+        let titleLabel = UILabel()
+        titleLabel.text = "Instellingen"
+        titleLabel.font = UIFont.boldSystemFont(ofSize: 24)
+        titleLabel.textAlignment = .center
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(titleLabel)
+        
+        NSLayoutConstraint.activate([
+            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 20),
+            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            titleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20)
+        ])
+        
+        // Divider
+        let divider = UIView()
+        divider.backgroundColor = UIColor.gray.withAlphaComponent(0.3)
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(divider)
+        
+        NSLayoutConstraint.activate([
+            divider.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 15),
+            divider.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            divider.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+            divider.heightAnchor.constraint(equalToConstant: 1)
+        ])
+        
+        // App info section
+        let appInfoLabel = UILabel()
+        appInfoLabel.text = "App Informatie"
+        appInfoLabel.font = UIFont.boldSystemFont(ofSize: 18)
+        appInfoLabel.textColor = .brown
+        appInfoLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(appInfoLabel)
+        
+        NSLayoutConstraint.activate([
+            appInfoLabel.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 20),
+            appInfoLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20)
+        ])
+        
+        // App version
+        let versionLabel = UILabel()
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        versionLabel.text = "Versie: \(appVersion) (\(buildNumber))"
+        versionLabel.font = UIFont.systemFont(ofSize: 14)
+        versionLabel.textColor = .darkGray
+        versionLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(versionLabel)
+        
+        NSLayoutConstraint.activate([
+            versionLabel.topAnchor.constraint(equalTo: appInfoLabel.bottomAnchor, constant: 10),
+            versionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20)
+        ])
+        
+        // Developer info
+        let developerLabel = UILabel()
+        developerLabel.text = "Ontwikkelaar: Pepper Technologies"
+        developerLabel.font = UIFont.systemFont(ofSize: 14)
+        developerLabel.textColor = .darkGray
+        developerLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(developerLabel)
+        
+        NSLayoutConstraint.activate([
+            developerLabel.topAnchor.constraint(equalTo: versionLabel.bottomAnchor, constant: 5),
+            developerLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20)
+        ])
+        
+        // App description
+        let descriptionLabel = UILabel()
+        descriptionLabel.text = "BierClicker - Het ultieme bier verzamel spel! Klik, verzamel en bouw je bier imperium op."
+        descriptionLabel.font = UIFont.systemFont(ofSize: 12)
+        descriptionLabel.textColor = .gray
+        descriptionLabel.numberOfLines = 0
+        descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(descriptionLabel)
+        
+        NSLayoutConstraint.activate([
+            descriptionLabel.topAnchor.constraint(equalTo: developerLabel.bottomAnchor, constant: 15),
+            descriptionLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            descriptionLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20)
+        ])
+        
+        // Game section divider
+        let gameDivider = UIView()
+        gameDivider.backgroundColor = UIColor.gray.withAlphaComponent(0.3)
+        gameDivider.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(gameDivider)
+        
+        NSLayoutConstraint.activate([
+            gameDivider.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 20),
+            gameDivider.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            gameDivider.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+            gameDivider.heightAnchor.constraint(equalToConstant: 1)
+        ])
+        
+        // Game actions section
+        let gameActionsLabel = UILabel()
+        gameActionsLabel.text = "Spel Acties"
+        gameActionsLabel.font = UIFont.boldSystemFont(ofSize: 18)
+        gameActionsLabel.textColor = .brown
+        gameActionsLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(gameActionsLabel)
+        
+        NSLayoutConstraint.activate([
+            gameActionsLabel.topAnchor.constraint(equalTo: gameDivider.bottomAnchor, constant: 20),
+            gameActionsLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20)
+        ])
+        
+        // Reset game button
+        let resetButton = UIButton(type: .system)
+        resetButton.setTitle("🔄 Spel Resetten", for: .normal)
+        resetButton.setTitleColor(.white, for: .normal)
+        resetButton.backgroundColor = .red
+        resetButton.layer.cornerRadius = 8
+        resetButton.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
+        resetButton.translatesAutoresizingMaskIntoConstraints = false
+        resetButton.addTarget(self, action: #selector(resetGameFromSettings), for: .touchUpInside)
+        containerView.addSubview(resetButton)
+        
+        NSLayoutConstraint.activate([
+            resetButton.topAnchor.constraint(equalTo: gameActionsLabel.bottomAnchor, constant: 15),
+            resetButton.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            resetButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20),
+            resetButton.heightAnchor.constraint(equalToConstant: 44)
+        ])
+        
+        // Warning text
+        let warningLabel = UILabel()
+        warningLabel.text = "⚠️ Dit wist alle voortgang permanent!"
+        warningLabel.font = UIFont.systemFont(ofSize: 12)
+        warningLabel.textColor = .red
+        warningLabel.textAlignment = .center
+        warningLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(warningLabel)
+        
+        NSLayoutConstraint.activate([
+            warningLabel.topAnchor.constraint(equalTo: resetButton.bottomAnchor, constant: 5),
+            warningLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            warningLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20)
+        ])
+        
+        // Credits section
+        let creditsLabel = UILabel()
+        creditsLabel.text = "Met dank aan alle bierliefhebbers! 🍻\n\n© 2025 Pepper Technologies\nAlle rechten voorbehouden"
+        creditsLabel.font = UIFont.systemFont(ofSize: 12)
+        creditsLabel.textColor = .gray
+        creditsLabel.textAlignment = .center
+        creditsLabel.numberOfLines = 0
+        creditsLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(creditsLabel)
+        
+        NSLayoutConstraint.activate([
+            creditsLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -20),
+            creditsLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20),
+            creditsLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -20)
+        ])
     }
     
     private func createShopItem(image: UIImage?, title: String, description: String, price: Int, tag: Int, position: Int) {
@@ -570,10 +794,10 @@ class GameViewController: UIViewController {
         }
     }
     
-    @objc func resetGame() {
+    @objc func resetGameFromSettings() {
         let alert = UIAlertController(
-            title: "Reset spel?",
-            message: "Weet je zeker dat je alle voortgang wilt wissen?",
+            title: "Spel Resetten?",
+            message: "Weet je zeker dat je alle voortgang wilt wissen? Deze actie kan niet ongedaan worden gemaakt!",
             preferredStyle: .alert
         )
         
@@ -586,10 +810,43 @@ class GameViewController: UIViewController {
             self.bierFustCount = 0
             self.saveProgress()
             self.updateUI()
-            self.updateFloatingItemsVisibility() // Update floating items visibility after reset
+            self.updateFloatingItemsVisibility()
+            
+            // Close settings
+            self.toggleSettings()
+            
+            // Show confirmation
+            let confirmAlert = UIAlertController(
+                title: "Spel Gereset!",
+                message: "Je voortgang is gewist. Veel plezier met een nieuw begin! 🍻",
+                preferredStyle: .alert
+            )
+            confirmAlert.addAction(UIAlertAction(title: "OK", style: .default))
+            self.present(confirmAlert, animated: true)
         })
         
         present(alert, animated: true)
+    }
+    
+    // MARK: - Settings Interactions
+    
+    @objc func toggleSettings() {
+        isSettingsOpen = !isSettingsOpen
+        
+        if isSettingsOpen {
+            // Show settings
+            settingsView.isHidden = false
+            UIView.animate(withDuration: 0.3) {
+                self.settingsView.alpha = 1.0
+            }
+        } else {
+            // Hide settings
+            UIView.animate(withDuration: 0.3) {
+                self.settingsView.alpha = 0.0
+            } completion: { _ in
+                self.settingsView.isHidden = true
+            }
+        }
     }
     
     // MARK: - Shop Interactions
