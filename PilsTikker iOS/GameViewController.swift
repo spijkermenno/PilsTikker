@@ -50,6 +50,11 @@ class GameViewController: UIViewController {
     private var baseRadius: Double = 110
     private var currentRadius: Double = 110
     
+    // Subtle bounce animation properties
+    private var bierdopCenterY: CGFloat = 0
+    private var bounceTimer: Timer?
+    private var bouncePhase: Double = 0.0
+    
     // Offline earnings constants
     private let maxOfflineMinutes: Double = 30.0 // Maximum 30 minutes of offline earnings
     
@@ -65,6 +70,7 @@ class GameViewController: UIViewController {
         setupShopUI()
         setupSettingsUI()
         setupTimer()
+        setupBounceAnimation()
         
         // Set up autosave
         setupAutosave()
@@ -144,11 +150,35 @@ class GameViewController: UIViewController {
         present(alertController, animated: true)
     }
     
+    // MARK: - Bounce Animation Setup
+
+    private func setupBounceAnimation() {
+        // Start continuous bounce animation at 60 FPS for smooth motion
+        bounceTimer = Timer.scheduledTimer(timeInterval: 0.016, target: self, selector: #selector(updateBounceAnimation), userInfo: nil, repeats: true)
+    }
+
+    @objc private func updateBounceAnimation() {
+        // Increment bounce phase for smooth sine wave motion
+        bouncePhase += 0.04 // Controls bounce speed (higher = faster bounce)
+        
+        // Create a subtle bounce using full sine wave (both up and down)
+        let bounceHeight: CGFloat = 5.0 // Bounce height you like
+        let bounceOffset = sin(bouncePhase) * bounceHeight
+        
+        // Apply the bounce to the bierdop's Y position
+        var center = imageView.center
+        center.y = bierdopCenterY - bounceOffset // Full sine wave motion
+        imageView.center = center
+    }
+    
     // MARK: - Floating Items Animation Setup
     
+    private let maxItemsInnerRing = 12
+    private let maxItemsOuterRing = 18
+    private func getMaxFloatingItems() -> Int { maxItemsInnerRing + maxItemsOuterRing }
+    
     private func setupFloatingItemsAnimation() {
-        // Create maximum 12 floating item views and their random rotation offsets
-        for i in 0..<12 {
+        for i in 0..<getMaxFloatingItems() {
             let itemImageView = UIImageView()
             itemImageView.contentMode = .scaleAspectFit
             itemImageView.frame = CGRect(x: 0, y: 0, width: 35, height: 35)
@@ -168,10 +198,9 @@ class GameViewController: UIViewController {
         // Initial update to show/hide items based on current counts
         updateFloatingItemsVisibility()
     }
-    
+
     private func updateFloatingItemsVisibility() {
         let totalItems = bierFlesCount + kratCount + bierFustCount
-        let maxFloatingItems = 12
         
         if totalItems == 0 {
             // Hide all items
@@ -183,7 +212,7 @@ class GameViewController: UIViewController {
         }
         
         // Calculate percentage-based distribution, but never exceed actual owned amounts
-        let totalFloatingItems = min(totalItems, maxFloatingItems)
+        let totalFloatingItems = min(totalItems, getMaxFloatingItems())
         
         // Calculate ideal slots based on percentage
         let idealBottleSlots = Double(bierFlesCount) / Double(totalItems) * Double(totalFloatingItems)
@@ -282,7 +311,7 @@ class GameViewController: UIViewController {
         // Regenerate random offsets for newly visible items to ensure variety
         regenerateRotationOffsetsForVisibleItems()
     }
-    
+
     private func regenerateRotationOffsetsForVisibleItems() {
         // Only regenerate offsets for currently visible items to add variety when items change
         for i in 0..<min(floatingItemOrder.count, floatingItemViews.count) {
@@ -291,7 +320,7 @@ class GameViewController: UIViewController {
             }
         }
     }
-    
+
     @objc private func updateFloatingItemPositions() {
         let visibleItemsCount = floatingItemOrder.count
         
@@ -302,28 +331,62 @@ class GameViewController: UIViewController {
             // Update individual item rotation angle (counterclockwise)
             itemRotationAngle += itemRotationSpeed
             
-            // Calculate positions for each visible item (using the randomized order)
-            for i in 0..<min(visibleItemsCount, floatingItemViews.count) {
+            // Define radii for inner and outer rings
+            let innerRadius: CGFloat = currentRadius // Original radius for inner ring
+            let outerRadius: CGFloat = currentRadius + 60 // Outer ring is 60 pixels further out
+            
+            // Distribute items between rings
+            let innerRingItems = min(visibleItemsCount, maxItemsInnerRing)
+            let outerRingItems = max(0, visibleItemsCount - maxItemsInnerRing)
+
+            // Position items in inner ring
+            for i in 0..<innerRingItems {
                 let itemView = floatingItemViews[i]
                 
                 if !itemView.isHidden {
-                    // Calculate angle offset for this specific item position in the ring
-                    let angleOffset = (Double(i) * 2.0 * Double.pi) / Double(visibleItemsCount)
+                    // Calculate angle offset for this specific item position in the inner ring
+                    let angleOffset = (Double(i) * 2.0 * Double.pi) / Double(innerRingItems)
                     let currentAngle = itemAngle + angleOffset
                     
-                    // Calculate circular position around bierdop
-                    let radius: CGFloat = currentRadius // Distance from center of bierdop
-                    let centerX = imageView.center.x
-                    let centerY = imageView.center.y
+                    // Calculate circular position around bierdop (using ORIGINAL bierdop center, not bouncing position)
+                    let centerX = view.center.x // Use original center position
+                    let centerY = bierdopCenterY // Use original Y position (not bouncing)
                     
-                    let x = centerX + radius * cos(currentAngle)
-                    let y = centerY + radius * sin(currentAngle)
+                    let x = centerX + innerRadius * cos(currentAngle)
+                    let y = centerY + innerRadius * sin(currentAngle)
                     
                     // Update item position
                     itemView.center = CGPoint(x: x, y: y)
                     
                     // Apply individual item rotation with unique offset (counterclockwise at 5°/sec)
                     let individualRotation = itemRotationAngle + itemRotationOffsets[i]
+                    itemView.transform = CGAffineTransform(rotationAngle: CGFloat(individualRotation))
+                }
+            }
+            
+            // Position items in outer ring
+            for i in 0..<outerRingItems {
+                let itemIndex = innerRingItems + i // Offset by inner ring items
+                let itemView = floatingItemViews[itemIndex]
+                
+                if !itemView.isHidden {
+                    // Calculate angle offset for this specific item position in the outer ring
+                    // Outer ring rotates slightly faster (1.2x speed) for visual variety
+                    let angleOffset = (Double(i) * 2.0 * Double.pi) / Double(outerRingItems)
+                    let currentAngle = (itemAngle * 1.2) + angleOffset
+                    
+                    // Calculate circular position around bierdop (using ORIGINAL bierdop center, not bouncing position)
+                    let centerX = view.center.x // Use original center position
+                    let centerY = bierdopCenterY // Use original Y position (not bouncing)
+                    
+                    let x = centerX + outerRadius * cos(currentAngle)
+                    let y = centerY + outerRadius * sin(currentAngle)
+                    
+                    // Update item position
+                    itemView.center = CGPoint(x: x, y: y)
+                    
+                    // Apply individual item rotation with unique offset (counterclockwise at 5°/sec)
+                    let individualRotation = itemRotationAngle + itemRotationOffsets[itemIndex]
                     itemView.transform = CGAffineTransform(rotationAngle: CGFloat(individualRotation))
                 }
             }
@@ -341,6 +404,9 @@ class GameViewController: UIViewController {
         imageView.center = view.center
         imageView.isUserInteractionEnabled = true // Belangrijk voor touch handling
         view.addSubview(imageView)
+        
+        // Store the original center Y position for bounce animation
+        bierdopCenterY = imageView.center.y
         
         // Bier count label (no decimals)
         bierCountLabel = UILabel(frame: CGRect(x: 0, y: 60, width: view.bounds.width, height: 40))
@@ -364,6 +430,8 @@ class GameViewController: UIViewController {
         
         updateUI()
     }
+
+    // [Rest of the code remains exactly the same as the original, including all the shop, settings, and game mechanics...]
     
     private func setupShopUI() {
         // Create shop button in bottom right corner
@@ -697,10 +765,11 @@ class GameViewController: UIViewController {
         imageView.image = image
         itemView.addSubview(imageView)
         
-        // Item title
+        // Item title with count (tag 100 + original tag for easy identification)
         let titleLabel = UILabel(frame: CGRect(x: itemHeight, y: 10, width: itemView.bounds.width - itemHeight - 10, height: 20))
         titleLabel.text = title
         titleLabel.font = UIFont.boldSystemFont(ofSize: 16)
+        titleLabel.tag = 100 + tag // Special tag to identify title labels
         itemView.addSubview(titleLabel)
         
         // Item description
@@ -719,6 +788,45 @@ class GameViewController: UIViewController {
         
         // Store price for later reference
         itemView.accessibilityValue = "\(price)"
+    }
+
+    private func updateShopItems() {
+        // Update shop items based on available resources
+        for tag in 1...3 {
+            guard let item = shopView.viewWithTag(tag) else { continue }
+            guard let priceString = item.accessibilityValue,
+                  let price = Int(priceString) else { continue }
+            
+            let canAfford = bierCount >= Double(price)
+            item.alpha = canAfford ? 1.0 : 0.6
+            
+            // Update the title label to show count
+            if let titleLabel = item.viewWithTag(100 + tag) as? UILabel {
+                var itemName = ""
+                var itemCount = 0
+                
+                switch tag {
+                case 1: // Bierfles
+                    itemName = "Bierfles"
+                    itemCount = bierFlesCount
+                case 2: // Bierkrat
+                    itemName = "Bierkrat"
+                    itemCount = kratCount
+                case 3: // Bierfust
+                    itemName = "Bierfust"
+                    itemCount = bierFustCount
+                default:
+                    break
+                }
+                
+                // Update title to show count
+                if itemCount > 0 {
+                    titleLabel.text = "\(itemName) (\(itemCount))"
+                } else {
+                    titleLabel.text = itemName
+                }
+            }
+        }
     }
     
     // MARK: - Game Mechanics
@@ -997,23 +1105,12 @@ class GameViewController: UIViewController {
             }
         }
     }
-    
-    private func updateShopItems() {
-        // Update shop items based on available resources
-        for tag in 1...3 {
-            guard let item = shopView.viewWithTag(tag) else { continue }
-            guard let priceString = item.accessibilityValue,
-                  let price = Int(priceString) else { continue }
-            
-            let canAfford = bierCount >= Double(price)
-            item.alpha = canAfford ? 1.0 : 0.6
-        }
-    }
-    
+        
     deinit {
         gameTimer?.invalidate()
         itemAnimationTimer?.invalidate()
         speedBoostTimer?.invalidate()
+        bounceTimer?.invalidate() // Clean up bounce timer
         NotificationCenter.default.removeObserver(self)
     }
 }
