@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "filename" : "A_pixel_art_digital_image_features_a_bottle_cap_wi.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "A_pixel_art_digital_image_features_a_bottle_cap_wi 1.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "A_pixel_art_digital_image_features_a_bottle_cap_wi 2.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

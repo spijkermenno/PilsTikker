@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "filename" : "A_pixel_art_digital_image_depicts_a_gray_metal_bee.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    },
+    {
+      "filename" : "A_pixel_art_digital_image_depicts_a_gray_metal_bee 1.png",
+      "idiom" : "universal",
+      "scale" : "2x"
+    },
+    {
+      "filename" : "A_pixel_art_digital_image_depicts_a_gray_metal_bee 2.png",
+      "idiom" : "universal",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
