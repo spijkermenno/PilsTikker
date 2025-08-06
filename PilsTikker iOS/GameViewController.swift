@@ -29,6 +29,8 @@ class GameViewController: UIViewController {
     private var floatingItemViews: [UIImageView] = []
     private var itemAnimationTimer: Timer?
     private var itemAngle: Double = 0.0
+    private var itemRotationAngle: Double = 0.0 // New: for individual item rotation
+    private var itemRotationOffsets: [Double] = [] // Random rotation offsets for each item
     private var floatingItemOrder: [String] = [] // Store randomized order
     
     // Constants for UserDefaults keys
@@ -39,8 +41,9 @@ class GameViewController: UIViewController {
     private let keyLastSaveTime = "lastSaveTime"
     
     // spinning animation
-    private var baseRotationSpeed: Double = 0.01
+    private var baseRotationSpeed: Double = 0.01 // Ring rotation (clockwise)
     private var currentRotationSpeed: Double = 0.01
+    private var itemRotationSpeed: Double = -0.00290 // Individual item rotation (counterclockwise, 5°/sec)
     private var speedBoostTimer: Timer?
     private var clickCount: Int = 0
     
@@ -144,7 +147,7 @@ class GameViewController: UIViewController {
     // MARK: - Floating Items Animation Setup
     
     private func setupFloatingItemsAnimation() {
-        // Create maximum 12 floating item views
+        // Create maximum 12 floating item views and their random rotation offsets
         for i in 0..<12 {
             let itemImageView = UIImageView()
             itemImageView.contentMode = .scaleAspectFit
@@ -153,6 +156,10 @@ class GameViewController: UIViewController {
             itemImageView.tag = i // For identification
             view.addSubview(itemImageView)
             floatingItemViews.append(itemImageView)
+            
+            // Generate random rotation offset between 0 and 2π for each item
+            let randomOffset = Double.random(in: 0...(5 * Double.pi))
+            itemRotationOffsets.append(randomOffset)
         }
         
         // Start the animation timer
@@ -271,21 +278,36 @@ class GameViewController: UIViewController {
         for i in floatingItemOrder.count..<floatingItemViews.count {
             floatingItemViews[i].isHidden = true
         }
+        
+        // Regenerate random offsets for newly visible items to ensure variety
+        regenerateRotationOffsetsForVisibleItems()
+    }
+    
+    private func regenerateRotationOffsetsForVisibleItems() {
+        // Only regenerate offsets for currently visible items to add variety when items change
+        for i in 0..<min(floatingItemOrder.count, floatingItemViews.count) {
+            if !floatingItemViews[i].isHidden {
+                itemRotationOffsets[i] = Double.random(in: 0...(2 * Double.pi))
+            }
+        }
     }
     
     @objc private func updateFloatingItemPositions() {
         let visibleItemsCount = floatingItemOrder.count
         
         if visibleItemsCount > 0 {
-            // Update angle for circular motion using current rotation speed
+            // Update angle for circular motion using current rotation speed (ring movement)
             itemAngle += currentRotationSpeed
+            
+            // Update individual item rotation angle (counterclockwise)
+            itemRotationAngle += itemRotationSpeed
             
             // Calculate positions for each visible item (using the randomized order)
             for i in 0..<min(visibleItemsCount, floatingItemViews.count) {
                 let itemView = floatingItemViews[i]
                 
                 if !itemView.isHidden {
-                    // Calculate angle offset for this specific item position
+                    // Calculate angle offset for this specific item position in the ring
                     let angleOffset = (Double(i) * 2.0 * Double.pi) / Double(visibleItemsCount)
                     let currentAngle = itemAngle + angleOffset
                     
@@ -300,8 +322,9 @@ class GameViewController: UIViewController {
                     // Update item position
                     itemView.center = CGPoint(x: x, y: y)
                     
-                    // Optional: Add slight rotation to each item for more dynamic effect
-                    itemView.transform = CGAffineTransform(rotationAngle: CGFloat(currentAngle * 0.5))
+                    // Apply individual item rotation with unique offset (counterclockwise at 5°/sec)
+                    let individualRotation = itemRotationAngle + itemRotationOffsets[i]
+                    itemView.transform = CGAffineTransform(rotationAngle: CGFloat(individualRotation))
                 }
             }
         }
