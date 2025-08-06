@@ -6,13 +6,8 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		A959C5072E434FB300DDC499 /* BierShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = A959C5062E434FB300DDC499 /* BierShaders.metal */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		A959C4EC2E434CAE00DDC499 /* PilsTikker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PilsTikker.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A959C5062E434FB300DDC499 /* BierShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = BierShaders.metal; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -68,7 +63,6 @@
 		A959C4DE2E434CAB00DDC499 = {
 			isa = PBXGroup;
 			children = (
-				A959C5062E434FB300DDC499 /* BierShaders.metal */,
 				A959C4E32E434CAD00DDC499 /* PilsTikker Shared */,
 				A959C4EE2E434CAE00DDC499 /* PilsTikker iOS */,
 				A959C4ED2E434CAE00DDC499 /* Products */,
@@ -157,7 +151,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A959C5072E434FB300DDC499 /* BierShaders.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

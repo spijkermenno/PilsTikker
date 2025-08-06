@@ -42,6 +42,9 @@ class GameViewController: UIViewController {
     private var baseRadius: Double = 110
     private var currentRadius: Double = 110
     
+    // Offline earnings constants
+    private let maxOfflineMinutes: Double = 30.0 // Maximum 30 minutes of offline earnings
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -75,11 +78,14 @@ class GameViewController: UIViewController {
         kratCount = defaults.integer(forKey: keyKratCount)
         bierFustCount = defaults.integer(forKey: keyBierFustCount)
         
-        // Calculate offline progress
+        // Calculate offline progress with 30-minute limit
         if let lastSaveTime = defaults.object(forKey: keyLastSaveTime) as? Date {
             let elapsedSeconds = Date().timeIntervalSince(lastSaveTime)
-            if elapsedSeconds > 0 && (bierFlesCount > 0 || kratCount > 0 || bierFustCount > 0) {
-                // Add offline production
+            let maxOfflineSeconds = maxOfflineMinutes * 60.0 // Convert to seconds
+            
+            // Only calculate offline earnings if elapsed time is positive and within the limit
+            if elapsedSeconds > 0 && elapsedSeconds >= maxOfflineSeconds && (bierFlesCount > 0 || kratCount > 0 || bierFustCount > 0) {
+                // Add offline production (capped at 30 minutes)
                 let offlineProduction = (Double(bierFlesCount) * 0.1 +
                                        Double(kratCount) * 0.3 +
                                        Double(bierFustCount) * 1.0) * elapsedSeconds
@@ -88,7 +94,8 @@ class GameViewController: UIViewController {
                 // Show offline earnings when significant
                 if offlineProduction >= 1.0 {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        self.showOfflineEarnings(amount: offlineProduction)
+                        let timeAwayMinutes = elapsedSeconds / 60.0
+                        self.showOfflineEarnings(amount: offlineProduction, timeAway: timeAwayMinutes)
                     }
                 }
             }
@@ -109,10 +116,19 @@ class GameViewController: UIViewController {
         Timer.scheduledTimer(timeInterval: 30.0, target: self, selector: #selector(saveProgress), userInfo: nil, repeats: true)
     }
     
-    private func showOfflineEarnings(amount: Double) {
+    private func showOfflineEarnings(amount: Double, timeAway: Double) {
+        let timeAwayText: String
+        if timeAway < 1.0 {
+            timeAwayText = "minder dan een minuut"
+        } else if timeAway >= maxOfflineMinutes {
+            timeAwayText = "\(Int(maxOfflineMinutes)) minuten (maximum)"
+        } else {
+            timeAwayText = "\(Int(timeAway)) minuten"
+        }
+        
         let alertController = UIAlertController(
             title: "Welkom terug!",
-            message: "Je producten hebben \(String(format: "%.1f", amount)) bier geproduceerd terwijl je weg was!",
+            message: "Je was \(timeAwayText) weg en je producten hebben \(String(format: "%.1f", amount)) bier geproduceerd!",
             preferredStyle: .alert
         )
         alertController.addAction(UIAlertAction(title: "Proost! 🍻", style: .default))
