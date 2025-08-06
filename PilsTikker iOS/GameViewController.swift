@@ -7,10 +7,15 @@ class GameViewController: UIViewController {
     private var bierCountLabel: UILabel!
     private var perSecondLabel: UILabel!
     
-    // Winkel items
-    private var bierFlesCount: Int = 0
-    private var kratCount: Int = 0
-    private var bierFustCount: Int = 0
+    // Shop items - NEW: Data-driven approach
+    private var shopItems: [ShopItem] = [
+        ShopItem(id: "bierfles", name: "Bierfles", imageName: "bierfles",
+                description: "Produceert 0.1 bier/sec", basePrice: 12, productionRate: 0.1),
+        ShopItem(id: "bierkrat", name: "Bierkrat", imageName: "bierkrat",
+                description: "Produceert 0.3 bier/sec", basePrice: 24, productionRate: 0.3),
+        ShopItem(id: "bierfust", name: "Bierfust", imageName: "bierfust",
+                description: "Produceert 1.0 bier/sec", basePrice: 120, productionRate: 1.0)
+    ]
     
     // Shop UI elements
     private var shopButton: UIButton!
@@ -29,21 +34,18 @@ class GameViewController: UIViewController {
     private var floatingItemViews: [UIImageView] = []
     private var itemAnimationTimer: Timer?
     private var itemAngle: Double = 0.0
-    private var itemRotationAngle: Double = 0.0 // New: for individual item rotation
-    private var itemRotationOffsets: [Double] = [] // Random rotation offsets for each item
-    private var floatingItemOrder: [String] = [] // Store randomized order
+    private var itemRotationAngle: Double = 0.0
+    private var itemRotationOffsets: [Double] = []
+    private var floatingItemOrder: [String] = []
     
     // Constants for UserDefaults keys
     private let keyBierCount = "bierCount"
-    private let keyBierFlesCount = "bierFlesCount"
-    private let keyKratCount = "kratCount"
-    private let keyBierFustCount = "bierFustCount"
     private let keyLastSaveTime = "lastSaveTime"
     
     // spinning animation
-    private var baseRotationSpeed: Double = 0.01 // Ring rotation (clockwise)
+    private var baseRotationSpeed: Double = 0.01
     private var currentRotationSpeed: Double = 0.01
-    private var itemRotationSpeed: Double = -0.00290 // Individual item rotation (counterclockwise, 5°/sec)
+    private var itemRotationSpeed: Double = -0.00290
     private var speedBoostTimer: Timer?
     private var clickCount: Int = 0
     
@@ -56,10 +58,27 @@ class GameViewController: UIViewController {
     private var bouncePhase: Double = 0.0
     
     // Offline earnings constants
-    private let maxOfflineMinutes: Double = 30.0 // Maximum 30 minutes of offline earnings
+    private let maxOfflineMinutes: Double = 30.0
+    
+    // Device-specific configuration
+    private var deviceConfig: DeviceConfiguration!
+    private var ringCapacities: [Int] = [] // Capacities for each ring
+    
+    // Dynamic ring properties (replace the fixed ones)
+    private func getTotalMaxFloatingItems() -> Int {
+        return ringCapacities.reduce(0, +)
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Get device configuration first
+        deviceConfig = getDeviceConfiguration()
+        setupRingCapacities()
+        
+        print("Device detected: \(deviceConfig.deviceType)")
+        print("Max rings: \(deviceConfig.maxRings)")
+        print("Ring capacities: \(ringCapacities)")
         
         // Set a simple background color
         view.backgroundColor = UIColor(red: 0.76, green: 0.65, blue: 0.48, alpha: 1.0)
@@ -72,10 +91,8 @@ class GameViewController: UIViewController {
         setupTimer()
         setupBounceAnimation()
         
-        // Set up autosave
         setupAutosave()
         
-        // Save when app goes to background
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(saveProgress),
@@ -84,26 +101,53 @@ class GameViewController: UIViewController {
         )
     }
     
+    private func setupRingCapacities() {
+        ringCapacities = []
+        
+        // Start with base capacity for inner ring
+        let baseCapacity = 12
+        
+        for ringIndex in 0..<deviceConfig.maxRings {
+            let capacity: Int
+            
+            if ringIndex == 0 {
+                // Inner ring always has base capacity
+                capacity = baseCapacity
+            } else {
+                // Each subsequent ring has 154% capacity of the previous ring
+                let previousCapacity = ringCapacities[ringIndex - 1]
+                capacity = Int(Double(previousCapacity) * 1.54)
+            }
+            
+            ringCapacities.append(capacity)
+        }
+        
+        print("Ring capacities calculated: \(ringCapacities)")
+    }
+    
     // MARK: - Progress Saving & Loading
     
     private func loadProgress() {
         let defaults = UserDefaults.standard
         bierCount = defaults.double(forKey: keyBierCount)
-        bierFlesCount = defaults.integer(forKey: keyBierFlesCount)
-        kratCount = defaults.integer(forKey: keyKratCount)
-        bierFustCount = defaults.integer(forKey: keyBierFustCount)
+        
+        // Load each shop item count dynamically
+        for i in 0..<shopItems.count {
+            let count = defaults.integer(forKey: "shopItem_\(shopItems[i].id)_count")
+            shopItems[i].count = count
+        }
         
         // Calculate offline progress with 30-minute limit
         if let lastSaveTime = defaults.object(forKey: keyLastSaveTime) as? Date {
             let elapsedSeconds = Date().timeIntervalSince(lastSaveTime)
-            let maxOfflineSeconds = maxOfflineMinutes * 60.0 // Convert to seconds
+            let maxOfflineSeconds = maxOfflineMinutes * 60.0
+            
+            let totalProduction = getTotalProductionRate()
             
             // Only calculate offline earnings if elapsed time is positive and within the limit
-            if elapsedSeconds >= maxOfflineSeconds && (bierFlesCount > 0 || kratCount > 0 || bierFustCount > 0) {
+            if elapsedSeconds >= maxOfflineSeconds && totalProduction > 0 {
                 // Add offline production (capped at 30 minutes)
-                let offlineProduction = (Double(bierFlesCount) * 0.1 +
-                                       Double(kratCount) * 0.3 +
-                                       Double(bierFustCount) * 1.0) * elapsedSeconds
+                let offlineProduction = totalProduction * elapsedSeconds
                 bierCount += offlineProduction
                 
                 // Show offline earnings when significant
@@ -120,14 +164,16 @@ class GameViewController: UIViewController {
     @objc func saveProgress() {
         let defaults = UserDefaults.standard
         defaults.set(bierCount, forKey: keyBierCount)
-        defaults.set(bierFlesCount, forKey: keyBierFlesCount)
-        defaults.set(kratCount, forKey: keyKratCount)
-        defaults.set(bierFustCount, forKey: keyBierFustCount)
+        
+        // Save each shop item count dynamically
+        for item in shopItems {
+            defaults.set(item.count, forKey: "shopItem_\(item.id)_count")
+        }
+        
         defaults.set(Date(), forKey: keyLastSaveTime)
     }
     
     private func setupAutosave() {
-        // Autosave every 30 seconds
         Timer.scheduledTimer(timeInterval: 30.0, target: self, selector: #selector(saveProgress), userInfo: nil, repeats: true)
     }
     
@@ -150,24 +196,34 @@ class GameViewController: UIViewController {
         present(alertController, animated: true)
     }
     
+    // MARK: - Helper Methods
+    
+    private func getTotalProductionRate() -> Double {
+        return shopItems.reduce(0) { total, item in
+            return total + (Double(item.count) * item.productionRate)
+        }
+    }
+    
+    private func getTotalItemCount() -> Int {
+        return shopItems.reduce(0) { total, item in
+            return total + item.count
+        }
+    }
+    
     // MARK: - Bounce Animation Setup
-
+    
     private func setupBounceAnimation() {
-        // Start continuous bounce animation at 60 FPS for smooth motion
         bounceTimer = Timer.scheduledTimer(timeInterval: 0.016, target: self, selector: #selector(updateBounceAnimation), userInfo: nil, repeats: true)
     }
-
+    
     @objc private func updateBounceAnimation() {
-        // Increment bounce phase for smooth sine wave motion
-        bouncePhase += 0.04 // Controls bounce speed (higher = faster bounce)
+        bouncePhase += 0.04
         
-        // Create a subtle bounce using full sine wave (both up and down)
-        let bounceHeight: CGFloat = 5.0 // Bounce height you like
+        let bounceHeight: CGFloat = 5.0
         let bounceOffset = sin(bouncePhase) * bounceHeight
         
-        // Apply the bounce to the bierdop's Y position
         var center = imageView.center
-        center.y = bierdopCenterY - bounceOffset // Full sine wave motion
+        center.y = bierdopCenterY - bounceOffset
         imageView.center = center
     }
     
@@ -178,217 +234,132 @@ class GameViewController: UIViewController {
     private func getMaxFloatingItems() -> Int { maxItemsInnerRing + maxItemsOuterRing }
     
     private func setupFloatingItemsAnimation() {
-        for i in 0..<getMaxFloatingItems() {
+        let totalCapacity = getTotalMaxFloatingItems()
+        
+        for i in 0..<totalCapacity {
             let itemImageView = UIImageView()
             itemImageView.contentMode = .scaleAspectFit
-            itemImageView.frame = CGRect(x: 0, y: 0, width: 35, height: 35)
-            itemImageView.isHidden = true // Initially hidden
-            itemImageView.tag = i // For identification
+            
+            // Scale item size based on device
+            let itemSize = 35 * deviceConfig.bierdopScale
+            itemImageView.frame = CGRect(x: 0, y: 0, width: itemSize, height: itemSize)
+            itemImageView.isHidden = true
+            itemImageView.tag = i
             view.addSubview(itemImageView)
             floatingItemViews.append(itemImageView)
             
-            // Generate random rotation offset between 0 and 2π for each item
             let randomOffset = Double.random(in: 0...(5 * Double.pi))
             itemRotationOffsets.append(randomOffset)
         }
         
-        // Start the animation timer
-        itemAnimationTimer = Timer.scheduledTimer(timeInterval: 0.016, target: self, selector: #selector(updateFloatingItemPositions), userInfo: nil, repeats: true) // ~60 FPS
+        itemAnimationTimer = Timer.scheduledTimer(timeInterval: 0.016, target: self, selector: #selector(updateFloatingItemPositions), userInfo: nil, repeats: true)
         
-        // Initial update to show/hide items based on current counts
         updateFloatingItemsVisibility()
     }
-
+    
     private func updateFloatingItemsVisibility() {
-        let totalItems = bierFlesCount + kratCount + bierFustCount
+        let totalItems = getTotalItemCount()
         
         if totalItems == 0 {
-            // Hide all items
             for itemView in floatingItemViews {
                 itemView.isHidden = true
             }
-            floatingItemOrder = [] // Clear the order
+            floatingItemOrder = []
             return
         }
         
-        // Calculate percentage-based distribution, but never exceed actual owned amounts
-        let totalFloatingItems = min(totalItems, getMaxFloatingItems())
+        let totalFloatingItems = min(totalItems, getTotalMaxFloatingItems())
         
-        // Calculate ideal slots based on percentage
-        let idealBottleSlots = Double(bierFlesCount) / Double(totalItems) * Double(totalFloatingItems)
-        let idealCrateSlots = Double(kratCount) / Double(totalItems) * Double(totalFloatingItems)
-        let idealKegSlots = Double(bierFustCount) / Double(totalItems) * Double(totalFloatingItems)
-        
-        // Round to integers, but never exceed actual owned amounts
-        var bottleSlots = min(bierFlesCount, Int(round(idealBottleSlots)))
-        var crateSlots = min(kratCount, Int(round(idealCrateSlots)))
-        var kegSlots = min(bierFustCount, Int(round(idealKegSlots)))
-        
-        // Ensure we don't exceed the total floating limit
-        let currentTotal = bottleSlots + crateSlots + kegSlots
-        
-        // If we're over the limit, reduce proportionally
-        if currentTotal > totalFloatingItems {
-            let reductionFactor = Double(totalFloatingItems) / Double(currentTotal)
-            bottleSlots = min(bierFlesCount, Int(Double(bottleSlots) * reductionFactor))
-            crateSlots = min(kratCount, Int(Double(crateSlots) * reductionFactor))
-            kegSlots = min(bierFustCount, Int(Double(kegSlots) * reductionFactor))
-        }
-        
-        // If we're under the limit, try to add more items proportionally
-        let finalTotal = bottleSlots + crateSlots + kegSlots
-        var remaining = totalFloatingItems - finalTotal
-        
-        // Distribute remaining slots to items that have more owned than currently shown
-        while remaining > 0 {
-            var added = false
-            
-            // Try to add bottles first if we have more than shown
-            if remaining > 0 && bottleSlots < bierFlesCount && bierFlesCount > 0 {
-                bottleSlots += 1
-                remaining -= 1
-                added = true
-            }
-            
-            // Try to add crates if we have more than shown
-            if remaining > 0 && crateSlots < kratCount && kratCount > 0 {
-                crateSlots += 1
-                remaining -= 1
-                added = true
-            }
-            
-            // Try to add kegs if we have more than shown
-            if remaining > 0 && kegSlots < bierFustCount && bierFustCount > 0 {
-                kegSlots += 1
-                remaining -= 1
-                added = true
-            }
-            
-            // If we couldn't add any more items, break to avoid infinite loop
-            if !added {
-                break
-            }
-        }
-        
-        print("DEBUG: Total items: \(totalItems), Bottles: \(bierFlesCount), Crates: \(kratCount), Kegs: \(bierFustCount)")
-        print("DEBUG: Floating - Bottles: \(bottleSlots)/\(bierFlesCount), Crates: \(crateSlots)/\(kratCount), Kegs: \(kegSlots)/\(bierFustCount)")
-        
-        // Create array of item types to randomize
+        // Create array of item types to show based on proportional distribution
         var itemsToShow: [String] = []
         
-        // Add bottles
-        for _ in 0..<bottleSlots {
-            itemsToShow.append("bierfles")
+        for item in shopItems {
+            if item.count > 0 {
+                // Calculate how many slots this item type should get
+                let idealSlots = Double(item.count) / Double(totalItems) * Double(totalFloatingItems)
+                let actualSlots = min(item.count, max(1, Int(round(idealSlots))))
+                
+                for _ in 0..<actualSlots {
+                    itemsToShow.append(item.imageName)
+                }
+            }
         }
         
-        // Add crates
-        for _ in 0..<crateSlots {
-            itemsToShow.append("bierkrat")
+        // Ensure we don't exceed the limit
+        if itemsToShow.count > totalFloatingItems {
+            itemsToShow = Array(itemsToShow.prefix(totalFloatingItems))
         }
         
-        // Add kegs
-        for _ in 0..<kegSlots {
-            itemsToShow.append("bierfust")
-        }
-        
-        // Shuffle the array to randomize order
+        // Shuffle for randomization
         itemsToShow.shuffle()
-        
-        // Store the randomized order
         floatingItemOrder = itemsToShow
         
-        // Apply the randomized items to the floating views
+        // Apply to floating views
         for i in 0..<min(floatingItemOrder.count, floatingItemViews.count) {
             floatingItemViews[i].image = UIImage(named: floatingItemOrder[i])
             floatingItemViews[i].isHidden = false
         }
         
-        // Hide remaining item views
+        // Hide remaining views
         for i in floatingItemOrder.count..<floatingItemViews.count {
             floatingItemViews[i].isHidden = true
         }
         
-        // Regenerate random offsets for newly visible items to ensure variety
         regenerateRotationOffsetsForVisibleItems()
     }
-
+    
     private func regenerateRotationOffsetsForVisibleItems() {
-        // Only regenerate offsets for currently visible items to add variety when items change
         for i in 0..<min(floatingItemOrder.count, floatingItemViews.count) {
             if !floatingItemViews[i].isHidden {
                 itemRotationOffsets[i] = Double.random(in: 0...(2 * Double.pi))
             }
         }
     }
-
+    
     @objc private func updateFloatingItemPositions() {
         let visibleItemsCount = floatingItemOrder.count
         
         if visibleItemsCount > 0 {
-            // Update angle for circular motion using current rotation speed (ring movement)
             itemAngle += currentRotationSpeed
-            
-            // Update individual item rotation angle (counterclockwise)
             itemRotationAngle += itemRotationSpeed
             
-            // Define radii for inner and outer rings
-            let innerRadius: CGFloat = currentRadius // Original radius for inner ring
-            let outerRadius: CGFloat = currentRadius + 60 // Outer ring is 60 pixels further out
+            var itemIndex = 0
             
-            // Distribute items between rings
-            let innerRingItems = min(visibleItemsCount, maxItemsInnerRing)
-            let outerRingItems = max(0, visibleItemsCount - maxItemsInnerRing)
-
-            // Position items in inner ring
-            for i in 0..<innerRingItems {
-                let itemView = floatingItemViews[i]
+            // Position items in each ring
+            for ringIndex in 0..<deviceConfig.maxRings {
+                let ringRadius = CGFloat(deviceConfig.baseRadius + (Double(ringIndex) * 60.0))
+                let ringCapacity = ringCapacities[ringIndex]
                 
-                if !itemView.isHidden {
-                    // Calculate angle offset for this specific item position in the inner ring
-                    let angleOffset = (Double(i) * 2.0 * Double.pi) / Double(innerRingItems)
-                    let currentAngle = itemAngle + angleOffset
-                    
-                    // Calculate circular position around bierdop (using ORIGINAL bierdop center, not bouncing position)
-                    let centerX = view.center.x // Use original center position
-                    let centerY = bierdopCenterY // Use original Y position (not bouncing)
-                    
-                    let x = centerX + innerRadius * cos(currentAngle)
-                    let y = centerY + innerRadius * sin(currentAngle)
-                    
-                    // Update item position
-                    itemView.center = CGPoint(x: x, y: y)
-                    
-                    // Apply individual item rotation with unique offset (counterclockwise at 5°/sec)
-                    let individualRotation = itemRotationAngle + itemRotationOffsets[i]
-                    itemView.transform = CGAffineTransform(rotationAngle: CGFloat(individualRotation))
-                }
-            }
-            
-            // Position items in outer ring
-            for i in 0..<outerRingItems {
-                let itemIndex = innerRingItems + i // Offset by inner ring items
-                let itemView = floatingItemViews[itemIndex]
+                // Calculate how many items should be in this ring
+                let remainingItems = visibleItemsCount - itemIndex
+                let itemsInThisRing = min(remainingItems, ringCapacity)
                 
-                if !itemView.isHidden {
-                    // Calculate angle offset for this specific item position in the outer ring
-                    // Outer ring rotates slightly faster (1.2x speed) for visual variety
-                    let angleOffset = (Double(i) * 2.0 * Double.pi) / Double(outerRingItems)
-                    let currentAngle = (itemAngle * 1.2) + angleOffset
+                if itemsInThisRing <= 0 { break }
+                
+                // Position items in this ring
+                for i in 0..<itemsInThisRing {
+                    let itemView = floatingItemViews[itemIndex + i]
                     
-                    // Calculate circular position around bierdop (using ORIGINAL bierdop center, not bouncing position)
-                    let centerX = view.center.x // Use original center position
-                    let centerY = bierdopCenterY // Use original Y position (not bouncing)
-                    
-                    let x = centerX + outerRadius * cos(currentAngle)
-                    let y = centerY + outerRadius * sin(currentAngle)
-                    
-                    // Update item position
-                    itemView.center = CGPoint(x: x, y: y)
-                    
-                    // Apply individual item rotation with unique offset (counterclockwise at 5°/sec)
-                    let individualRotation = itemRotationAngle + itemRotationOffsets[itemIndex]
-                    itemView.transform = CGAffineTransform(rotationAngle: CGFloat(individualRotation))
+                    if !itemView.isHidden {
+                        let angleOffset = (Double(i) * 2.0 * Double.pi) / Double(itemsInThisRing)
+                        // Each ring rotates at slightly different speed for visual variety
+                        let ringSpeedMultiplier = 1.0 + (Double(ringIndex) * 0.1)
+                        let currentAngle = (itemAngle * ringSpeedMultiplier) + angleOffset
+                        
+                        let centerX = view.center.x
+                        let centerY = bierdopCenterY
+                        
+                        let x = centerX + ringRadius * cos(currentAngle)
+                        let y = centerY + ringRadius * sin(currentAngle)
+                        
+                        itemView.center = CGPoint(x: x, y: y)
+                        
+                        let individualRotation = itemRotationAngle + itemRotationOffsets[itemIndex + i]
+                        itemView.transform = CGAffineTransform(rotationAngle: CGFloat(individualRotation))
+                    }
                 }
+                
+                itemIndex += itemsInThisRing
             }
         }
     }
@@ -396,46 +367,50 @@ class GameViewController: UIViewController {
     // MARK: - UI Setup
     
     private func setupUI() {
-        // Bierdop afbeelding toevoegen (resized to 150px)
+        // Bierdop with device-specific scaling
         let bierDopImage = UIImage(named: "bierdop")
         imageView = UIImageView(image: bierDopImage)
         imageView.contentMode = .scaleAspectFit
-        imageView.frame = CGRect(x: 0, y: 0, width: 150, height: 150)
+        
+        let bierdopSize = 150 * deviceConfig.bierdopScale
+        imageView.frame = CGRect(x: 0, y: 0, width: bierdopSize, height: bierdopSize)
         imageView.center = view.center
-        imageView.isUserInteractionEnabled = true // Belangrijk voor touch handling
+        imageView.isUserInteractionEnabled = true
         view.addSubview(imageView)
         
-        // Store the original center Y position for bounce animation
+        // Update base radius from device config
+        baseRadius = deviceConfig.baseRadius
+        currentRadius = baseRadius
+        
         bierdopCenterY = imageView.center.y
         
-        // Bier count label (no decimals)
+        // Labels (scale font size on larger devices)
+        let labelFontScale = deviceConfig.bierdopScale
+        
         bierCountLabel = UILabel(frame: CGRect(x: 0, y: 60, width: view.bounds.width, height: 40))
         bierCountLabel.textAlignment = .center
         bierCountLabel.textColor = .brown
-        bierCountLabel.font = UIFont.boldSystemFont(ofSize: 24)
+        bierCountLabel.font = UIFont.boldSystemFont(ofSize: 24 * labelFontScale)
         bierCountLabel.text = "Bier: 0"
         view.addSubview(bierCountLabel)
         
-        // Per second label (new, replaces the detailed items label)
         perSecondLabel = UILabel(frame: CGRect(x: 0, y: 100, width: view.bounds.width, height: 30))
         perSecondLabel.textAlignment = .center
         perSecondLabel.textColor = .brown
-        perSecondLabel.font = UIFont.systemFont(ofSize: 16)
+        perSecondLabel.font = UIFont.systemFont(ofSize: 16 * labelFontScale)
         perSecondLabel.text = "0.0 bier/sec"
         view.addSubview(perSecondLabel)
         
-        // Tap gesture toevoegen
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         imageView.addGestureRecognizer(tapGesture)
         
         updateUI()
     }
-
-    // [Rest of the code remains exactly the same as the original, including all the shop, settings, and game mechanics...]
+    
+    // MARK: - Shop UI Setup
     
     private func setupShopUI() {
-        // Create shop button in bottom right corner
-        let buttonSize: CGFloat = 60
+        let buttonSize: CGFloat = 60 * deviceConfig.shopScale
         let padding: CGFloat = 20
         
         shopButton = UIButton(type: .system)
@@ -452,82 +427,128 @@ class GameViewController: UIViewController {
         shopButton.addTarget(self, action: #selector(toggleShop), for: .touchUpInside)
         view.addSubview(shopButton)
         
-        // Create shop view positioned at the button location (initially small and hidden)
+        // Scale shop view based on device
+        let shopWidth = 250 * deviceConfig.shopScale
+        let shopHeight = 400 * deviceConfig.shopScale
+        
         shopView = UIView(frame: CGRect(
-            x: shopButton.center.x - 25, // Center on button horizontally
-            y: shopButton.center.y - 25, // Center on button vertically
-            width: 50, // Start very small
+            x: shopButton.center.x - 25,
+            y: shopButton.center.y - 25,
+            width: 50,
             height: 50
         ))
         shopView.backgroundColor = UIColor(white: 0.95, alpha: 0.95)
-        shopView.layer.cornerRadius = 25 // Half of initial size for circular start
+        shopView.layer.cornerRadius = 25
         shopView.layer.shadowColor = UIColor.black.cgColor
         shopView.layer.shadowOffset = CGSize(width: 0, height: -3)
         shopView.layer.shadowOpacity = 0.3
         shopView.layer.shadowRadius = 5
-        shopView.clipsToBounds = true // Important for the expand animation
-        shopView.alpha = 0 // Start invisible
+        shopView.clipsToBounds = true
+        shopView.alpha = 0
         view.addSubview(shopView)
         
-        // Add shop header
-        let shopHeader = UILabel(frame: CGRect(x: 0, y: 10, width: 250, height: 30))
+        // Add shop header with scaled font
+        let headerFontSize = 18 * deviceConfig.shopScale
+        let shopHeader = UILabel(frame: CGRect(x: 0, y: 10, width: shopWidth, height: 30 * deviceConfig.shopScale))
         shopHeader.text = "Winkel"
-        shopHeader.font = UIFont.boldSystemFont(ofSize: 18)
+        shopHeader.font = UIFont.boldSystemFont(ofSize: headerFontSize)
         shopHeader.textAlignment = .center
         shopView.addSubview(shopHeader)
         
-        // Add a divider
-        let divider = UIView(frame: CGRect(x: 15, y: 45, width: 220, height: 1))
+        // Add divider
+        let divider = UIView(frame: CGRect(x: 15 * deviceConfig.shopScale, y: 45, width: shopWidth - 30, height: 1))
         divider.backgroundColor = UIColor.gray.withAlphaComponent(0.3)
         shopView.addSubview(divider)
         
-        // Add bierfles item to the shop (new)
-        createShopItem(
-            image: UIImage(named: "bierfles"),
-            title: "Bierfles",
-            description: "Produceert 0.1 bier/sec",
-            price: 12,
-            tag: 1,
-            position: 0
-        )
+        // Create shop items dynamically
+        for (index, item) in shopItems.enumerated() {
+            createShopItem(
+                image: UIImage(named: item.imageName),
+                title: item.name,
+                description: item.description,
+                price: item.basePrice,
+                tag: index + 1,
+                position: index
+            )
+        }
         
-        // Add bierkrat item to the shop (updated rate)
-        createShopItem(
-            image: UIImage(named: "bierkrat"),
-            title: "Bierkrat",
-            description: "Produceert 0.3 bier/sec",
-            price: 24,
-            tag: 2,
-            position: 1
-        )
-        
-        // Add bierfust item to the shop (new)
-        createShopItem(
-            image: UIImage(named: "bierfust"),
-            title: "Bierfust",
-            description: "Produceert 1.0 bier/sec",
-            price: 120,
-            tag: 3,
-            position: 2
-        )
-        
-        // Close shop when tapping outside
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap(_:)))
         tapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(tapGesture)
     }
     
+    private func createShopItem(image: UIImage?, title: String, description: String, price: Int, tag: Int, position: Int) {
+        let itemHeight: CGFloat = 80
+        let padding: CGFloat = 10
+        let yPosition: CGFloat = 50 + CGFloat(position) * (itemHeight + padding)
+        
+        let itemView = UIView(frame: CGRect(x: 10, y: yPosition, width: 230, height: itemHeight))
+        itemView.backgroundColor = UIColor.white
+        itemView.layer.cornerRadius = 10
+        itemView.tag = tag
+        shopView.addSubview(itemView)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(shopItemTapped(_:)))
+        itemView.addGestureRecognizer(tapGesture)
+        itemView.isUserInteractionEnabled = true
+        
+        let imageView = UIImageView(frame: CGRect(x: 10, y: 10, width: itemHeight - 20, height: itemHeight - 20))
+        imageView.contentMode = .scaleAspectFit
+        imageView.image = image
+        itemView.addSubview(imageView)
+        
+        let titleLabel = UILabel(frame: CGRect(x: itemHeight, y: 10, width: itemView.bounds.width - itemHeight - 10, height: 20))
+        titleLabel.text = title
+        titleLabel.font = UIFont.boldSystemFont(ofSize: 16)
+        titleLabel.tag = 100 + tag
+        itemView.addSubview(titleLabel)
+        
+        let descLabel = UILabel(frame: CGRect(x: itemHeight, y: 30, width: itemView.bounds.width - itemHeight - 10, height: 20))
+        descLabel.text = description
+        descLabel.font = UIFont.systemFont(ofSize: 12)
+        descLabel.textColor = .darkGray
+        itemView.addSubview(descLabel)
+        
+        let priceLabel = UILabel(frame: CGRect(x: itemHeight, y: 50, width: itemView.bounds.width - itemHeight - 10, height: 20))
+        priceLabel.text = "\(price) bier 🍺"
+        priceLabel.font = UIFont.systemFont(ofSize: 14)
+        priceLabel.textColor = .brown
+        itemView.addSubview(priceLabel)
+        
+        itemView.accessibilityValue = "\(price)"
+    }
+    
+    private func updateShopItems() {
+        for (index, item) in shopItems.enumerated() {
+            let tag = index + 1
+            guard let itemView = shopView.viewWithTag(tag) else { continue }
+            guard let priceString = itemView.accessibilityValue,
+                  let price = Int(priceString) else { continue }
+            
+            let canAfford = bierCount >= Double(price)
+            itemView.alpha = canAfford ? 1.0 : 0.6
+            
+            // Update the title label to show count
+            if let titleLabel = itemView.viewWithTag(100 + tag) as? UILabel {
+                if item.count > 0 {
+                    titleLabel.text = "\(item.name) (\(item.count))"
+                } else {
+                    titleLabel.text = item.name
+                }
+            }
+        }
+    }
+    
     // MARK: - Settings UI Setup
     
     private func setupSettingsUI() {
-        // Create settings button in top right corner
         let buttonSize: CGFloat = 40
         let padding: CGFloat = 20
         
         settingsButton = UIButton(type: .system)
         settingsButton.frame = CGRect(
             x: view.bounds.width - buttonSize - padding,
-            y: padding + 40, // Below status bar
+            y: padding + 40,
             width: buttonSize,
             height: buttonSize
         )
@@ -538,7 +559,6 @@ class GameViewController: UIViewController {
         settingsButton.addTarget(self, action: #selector(toggleSettings), for: .touchUpInside)
         view.addSubview(settingsButton)
         
-        // Create full-screen settings view (initially hidden)
         settingsView = UIView(frame: view.bounds)
         settingsView.backgroundColor = UIColor.black.withAlphaComponent(0.9)
         settingsView.alpha = 0
@@ -610,6 +630,45 @@ class GameViewController: UIViewController {
             divider.heightAnchor.constraint(equalToConstant: 1)
         ])
         
+        // Device info section
+        let deviceInfoLabel = UILabel()
+        deviceInfoLabel.text = "Apparaat Informatie"
+        deviceInfoLabel.font = UIFont.boldSystemFont(ofSize: 18)
+        deviceInfoLabel.textColor = .brown
+        deviceInfoLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(deviceInfoLabel)
+        
+        NSLayoutConstraint.activate([
+            deviceInfoLabel.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 20),
+            deviceInfoLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20)
+        ])
+        
+        // Device type
+        let deviceTypeLabel = UILabel()
+        deviceTypeLabel.text = "Apparaat: \(deviceConfig.deviceType)"
+        deviceTypeLabel.font = UIFont.systemFont(ofSize: 14)
+        deviceTypeLabel.textColor = .darkGray
+        deviceTypeLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(deviceTypeLabel)
+        
+        NSLayoutConstraint.activate([
+            deviceTypeLabel.topAnchor.constraint(equalTo: deviceInfoLabel.bottomAnchor, constant: 10),
+            deviceTypeLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20)
+        ])
+        
+        // Rings info
+        let ringsInfoLabel = UILabel()
+        ringsInfoLabel.text = "Ringen: \(deviceConfig.maxRings) (capaciteit: \(getTotalMaxFloatingItems()))"
+        ringsInfoLabel.font = UIFont.systemFont(ofSize: 14)
+        ringsInfoLabel.textColor = .darkGray
+        ringsInfoLabel.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(ringsInfoLabel)
+        
+        NSLayoutConstraint.activate([
+            ringsInfoLabel.topAnchor.constraint(equalTo: deviceTypeLabel.bottomAnchor, constant: 5),
+            ringsInfoLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20)
+        ])
+        
         // App info section
         let appInfoLabel = UILabel()
         appInfoLabel.text = "App Informatie"
@@ -619,7 +678,7 @@ class GameViewController: UIViewController {
         containerView.addSubview(appInfoLabel)
         
         NSLayoutConstraint.activate([
-            appInfoLabel.topAnchor.constraint(equalTo: divider.bottomAnchor, constant: 20),
+            appInfoLabel.topAnchor.constraint(equalTo: ringsInfoLabel.bottomAnchor, constant: 20),
             appInfoLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 20)
         ])
         
@@ -742,115 +801,21 @@ class GameViewController: UIViewController {
         ])
     }
     
-    private func createShopItem(image: UIImage?, title: String, description: String, price: Int, tag: Int, position: Int) {
-        let itemHeight: CGFloat = 80
-        let padding: CGFloat = 10
-        let yPosition: CGFloat = 50 + CGFloat(position) * (itemHeight + padding)
-        
-        // Item container (fixed width for expanded shop size)
-        let itemView = UIView(frame: CGRect(x: 10, y: yPosition, width: 230, height: itemHeight))
-        itemView.backgroundColor = UIColor.white
-        itemView.layer.cornerRadius = 10
-        itemView.tag = tag
-        shopView.addSubview(itemView)
-        
-        // Add tap gesture
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(shopItemTapped(_:)))
-        itemView.addGestureRecognizer(tapGesture)
-        itemView.isUserInteractionEnabled = true
-        
-        // Item image
-        let imageView = UIImageView(frame: CGRect(x: 10, y: 10, width: itemHeight - 20, height: itemHeight - 20))
-        imageView.contentMode = .scaleAspectFit
-        imageView.image = image
-        itemView.addSubview(imageView)
-        
-        // Item title with count (tag 100 + original tag for easy identification)
-        let titleLabel = UILabel(frame: CGRect(x: itemHeight, y: 10, width: itemView.bounds.width - itemHeight - 10, height: 20))
-        titleLabel.text = title
-        titleLabel.font = UIFont.boldSystemFont(ofSize: 16)
-        titleLabel.tag = 100 + tag // Special tag to identify title labels
-        itemView.addSubview(titleLabel)
-        
-        // Item description
-        let descLabel = UILabel(frame: CGRect(x: itemHeight, y: 30, width: itemView.bounds.width - itemHeight - 10, height: 20))
-        descLabel.text = description
-        descLabel.font = UIFont.systemFont(ofSize: 12)
-        descLabel.textColor = .darkGray
-        itemView.addSubview(descLabel)
-        
-        // Item price
-        let priceLabel = UILabel(frame: CGRect(x: itemHeight, y: 50, width: itemView.bounds.width - itemHeight - 10, height: 20))
-        priceLabel.text = "\(price) bier 🍺"
-        priceLabel.font = UIFont.systemFont(ofSize: 14)
-        priceLabel.textColor = .brown
-        itemView.addSubview(priceLabel)
-        
-        // Store price for later reference
-        itemView.accessibilityValue = "\(price)"
-    }
-
-    private func updateShopItems() {
-        // Update shop items based on available resources
-        for tag in 1...3 {
-            guard let item = shopView.viewWithTag(tag) else { continue }
-            guard let priceString = item.accessibilityValue,
-                  let price = Int(priceString) else { continue }
-            
-            let canAfford = bierCount >= Double(price)
-            item.alpha = canAfford ? 1.0 : 0.6
-            
-            // Update the title label to show count
-            if let titleLabel = item.viewWithTag(100 + tag) as? UILabel {
-                var itemName = ""
-                var itemCount = 0
-                
-                switch tag {
-                case 1: // Bierfles
-                    itemName = "Bierfles"
-                    itemCount = bierFlesCount
-                case 2: // Bierkrat
-                    itemName = "Bierkrat"
-                    itemCount = kratCount
-                case 3: // Bierfust
-                    itemName = "Bierfust"
-                    itemCount = bierFustCount
-                default:
-                    break
-                }
-                
-                // Update title to show count
-                if itemCount > 0 {
-                    titleLabel.text = "\(itemName) (\(itemCount))"
-                } else {
-                    titleLabel.text = itemName
-                }
-            }
-        }
-    }
-    
     // MARK: - Game Mechanics
     
     private func setupTimer() {
-        // Timer voor passieve inkomsten
         gameTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(updateGame), userInfo: nil, repeats: true)
     }
     
     @objc func handleTap(_ gesture: UITapGestureRecognizer) {
-        // Bier toevoegen (immediate action)
         bierCount += 1
         updateUI()
         
-        // Increase rotation speed
         increaseRotationSpeed()
         
-        // Cancel any existing animations
         imageView.layer.removeAllAnimations()
-        
-        // Reset transform to identity before starting new animation
         imageView.transform = CGAffineTransform.identity
         
-        // Start new animation
         UIView.animate(withDuration: 0.01, animations: {
             self.imageView.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
         }, completion: { _ in
@@ -862,38 +827,30 @@ class GameViewController: UIViewController {
     
     // MARK: - Rotation Speed Boost
     private func increaseRotationSpeed() {
-        // Increment click count, but cap it to maintain max 10x speed
-        let maxClickCount = Int(10.0 / 0.5) // Calculate max clicks for 10x speed (20 clicks)
+        let maxClickCount = Int(10.0 / 0.5)
         clickCount = min(clickCount + 1, maxClickCount)
         
-        // Calculate new speed (50% increase per click, capped at 10x base speed)
         currentRotationSpeed = min(baseRotationSpeed * (1.0 + Double(clickCount) * 0.5), baseRotationSpeed * 10.0)
         currentRadius = min(baseRadius * (1.0 + Double(clickCount) * 0.025), baseRadius * 10.0)
         
-        // Cancel existing timer
         speedBoostTimer?.invalidate()
         
-        // Start new timer to reduce speed after 1 second
         speedBoostTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
             self.reduceRotationSpeed()
         }
     }
-
+    
     private func reduceRotationSpeed() {
-        // Reduce click count by 1 (gradual slowdown)
         clickCount = max(0, clickCount - 1)
         
-        // Recalculate speed (capped at 10x base speed)
         currentRotationSpeed = min(baseRotationSpeed * (1.0 + Double(clickCount) * 0.5), baseRotationSpeed * 10.0)
         currentRadius = min(baseRadius * (1.0 + Double(clickCount) * 0.025), baseRadius * 10.0)
-
-        // If still have clicks remaining, schedule another reduction
+        
         if clickCount > 0 {
             speedBoostTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { _ in
                 self.reduceRotationSpeed()
             }
         } else {
-            // Reset to base speed
             currentRotationSpeed = baseRotationSpeed
             currentRadius = baseRadius
             speedBoostTimer = nil
@@ -901,25 +858,20 @@ class GameViewController: UIViewController {
     }
     
     @objc func updateGame() {
-        // Voeg passieve inkomsten toe
-        if bierFlesCount > 0 || kratCount > 0 || bierFustCount > 0 {
-            let increment = (Double(bierFlesCount) * 0.1 +
-                           Double(kratCount) * 0.3 +
-                           Double(bierFustCount) * 1.0) * 0.1 // 0.1 second interval
+        let totalProduction = getTotalProductionRate()
+        if totalProduction > 0 {
+            let increment = totalProduction * 0.1 // 0.1 second interval
             bierCount += increment
             updateUI()
         }
     }
     
     private func updateUI() {
-        // Update bier count without decimals
         bierCountLabel.text = "Bier: \(Int(bierCount))"
         
-        // Update per second rate
-        let totalPerSecond = Double(bierFlesCount) * 0.1 + Double(kratCount) * 0.3 + Double(bierFustCount) * 1.0
+        let totalPerSecond = getTotalProductionRate()
         perSecondLabel.text = "\(String(format: "%.1f", totalPerSecond)) bier/sec"
         
-        // Update shop items if shop is open
         if isShopOpen {
             updateShopItems()
         }
@@ -936,17 +888,15 @@ class GameViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Reset", style: .destructive) { _ in
             // Reset game data
             self.bierCount = 0
-            self.bierFlesCount = 0
-            self.kratCount = 0
-            self.bierFustCount = 0
+            for i in 0..<self.shopItems.count {
+                self.shopItems[i].count = 0
+            }
             self.saveProgress()
             self.updateUI()
             self.updateFloatingItemsVisibility()
             
-            // Close settings
             self.toggleSettings()
             
-            // Show confirmation
             let confirmAlert = UIAlertController(
                 title: "Spel Gereset!",
                 message: "Je voortgang is gewist. Veel plezier met een nieuw begin! 🍻",
@@ -965,13 +915,11 @@ class GameViewController: UIViewController {
         isSettingsOpen = !isSettingsOpen
         
         if isSettingsOpen {
-            // Show settings
             settingsView.isHidden = false
             UIView.animate(withDuration: 0.3) {
                 self.settingsView.alpha = 1.0
             }
         } else {
-            // Hide settings
             UIView.animate(withDuration: 0.3) {
                 self.settingsView.alpha = 0.0
             } completion: { _ in
@@ -985,30 +933,25 @@ class GameViewController: UIViewController {
     @objc func toggleShop() {
         isShopOpen = !isShopOpen
         
-        let buttonSize: CGFloat = 60
+        let buttonSize: CGFloat = 60 * deviceConfig.shopScale
         let padding: CGFloat = 20
         
-        // Calculate final shop position and size
-        let finalWidth: CGFloat = 250
-        let finalHeight: CGFloat = 400
+        let finalWidth: CGFloat = 250 * deviceConfig.shopScale
+        let finalHeight: CGFloat = 400 * deviceConfig.shopScale
         let finalX = view.bounds.width - finalWidth - padding
         let finalY = view.bounds.height - finalHeight - padding - buttonSize - 10
         
         if isShopOpen {
-            // Change button to close icon
             shopButton.setImage(UIImage(systemName: "xmark"), for: .normal)
             
-            // Animate shop expansion from button position
             UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0, options: [], animations: {
                 self.shopView.frame = CGRect(x: finalX, y: finalY, width: finalWidth, height: finalHeight)
                 self.shopView.layer.cornerRadius = 15
                 self.shopView.alpha = 1.0
             }, completion: nil)
         } else {
-            // Change button back to cart icon
             shopButton.setImage(UIImage(systemName: "cart"), for: .normal)
             
-            // Animate shop collapse back to button position
             UIView.animate(withDuration: 0.2, animations: {
                 self.shopView.frame = CGRect(
                     x: self.shopButton.center.x - 25,
@@ -1029,44 +972,26 @@ class GameViewController: UIViewController {
         guard let priceString = itemView.accessibilityValue,
               let price = Int(priceString) else { return }
         
+        let itemIndex = itemView.tag - 1 // Convert back to array index
+        guard itemIndex >= 0 && itemIndex < shopItems.count else { return }
+        
         var canAfford = false
         
-        switch itemView.tag {
-        case 1: // Bierfles
-            if bierCount >= Double(price) {
-                bierCount -= Double(price)
-                bierFlesCount += 1
-                canAfford = true
-            }
-        case 2: // Bierkrat
-            if bierCount >= Double(price) {
-                bierCount -= Double(price)
-                kratCount += 1
-                canAfford = true
-            }
-        case 3: // Bierfust
-            if bierCount >= Double(price) {
-                bierCount -= Double(price)
-                bierFustCount += 1
-                canAfford = true
-            }
-        default:
-            break
+        if bierCount >= Double(price) {
+            bierCount -= Double(price)
+            shopItems[itemIndex].count += 1
+            canAfford = true
         }
         
         if canAfford {
             updateUI()
             saveProgress()
-            updateFloatingItemsVisibility() // Update floating items when purchasing
+            updateFloatingItemsVisibility()
             
-            // Cancel any existing animations
             itemView.layer.removeAllAnimations()
-            
-            // Reset to default state before starting new animation
             itemView.transform = .identity
             itemView.backgroundColor = .white
             
-            // Show animation for successful purchase
             UIView.animate(withDuration: 0.05, animations: {
                 itemView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
                 itemView.backgroundColor = UIColor(red: 0.9, green: 1.0, blue: 0.9, alpha: 1.0)
@@ -1077,13 +1002,9 @@ class GameViewController: UIViewController {
                 }
             })
         } else {
-            // Cancel any existing animations
             itemView.layer.removeAllAnimations()
-            
-            // Reset to default state before starting new animation
             itemView.backgroundColor = .white
             
-            // Show animation for failed purchase
             UIView.animate(withDuration: 0.2, animations: {
                 itemView.backgroundColor = UIColor(red: 1.0, green: 0.9, blue: 0.9, alpha: 1.0)
             }, completion: { _ in
@@ -1097,7 +1018,6 @@ class GameViewController: UIViewController {
     }
     
     @objc func handleBackgroundTap(_ gesture: UITapGestureRecognizer) {
-        // Close shop when tapping outside if it's open
         if isShopOpen {
             let location = gesture.location(in: view)
             if !shopView.frame.contains(location) && !shopButton.frame.contains(location) {
@@ -1105,12 +1025,12 @@ class GameViewController: UIViewController {
             }
         }
     }
-        
+    
     deinit {
         gameTimer?.invalidate()
         itemAnimationTimer?.invalidate()
         speedBoostTimer?.invalidate()
-        bounceTimer?.invalidate() // Clean up bounce timer
+        bounceTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
     }
 }
