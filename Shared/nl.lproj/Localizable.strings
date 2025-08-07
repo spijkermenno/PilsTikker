@@ -1,0 +1,102 @@
+/* 
+  Localizable.strings
+  Tap the Cap
+
+  Created by Menno Spijker on 07/08/2025.
+  
+*/
+
+/* Label showing total beer count */
+"bier.label.count" = "Bier: %d";
+
+/* Label showing production per second */
+"bier.label.perSecond" = "%.1f bier/sec";
+
+/* Button title: open shop */
+"button.shop.open" = "Winkel 🛒";
+
+/* Button title: close shop */
+"button.shop.close" = "Sluit Winkel ✖️";
+
+/* Shop item buy button */
+"shop.item.buy" = "Koop (%d)";
+
+/* Offline earnings title */
+"offline.title" = "Welkom terug!";
+
+/* Offline earnings message */
+"offline.message" = "Je was %d minuten weg en je producten hebben %.1f bier geproduceerd!";
+
+/* Offline confirmation button */
+"offline.button.confirm" = "Proost! 🍻";
+
+/* Settings title */
+"settings.title" = "Instellingen";
+
+/* Device info section title */
+"settings.device.title" = "Apparaat Informatie";
+
+/* Device info: device type */
+"settings.device.type" = "Apparaat: %@";
+
+/* Device info: rings */
+"settings.device.rings" = "Ringen: %d (capaciteit: %d)";
+
+/* App info section title */
+"settings.app.title" = "App Informatie";
+
+/* App info: version */
+"settings.app.version" = "Versie: %@ (%@)";
+
+/* App info: developer */
+"settings.app.dev" = "Ontwikkelaar: Pepper Technologies";
+
+/* App info: description */
+"settings.app.desc" = "BierClicker – Het ultieme bier verzamel spel! Klik, verzamel en bouw je bierimperium op.";
+
+/* Game actions section title */
+"settings.actions.title" = "Spel Acties";
+
+/* Reset button title */
+"settings.actions.reset" = "🔄 Spel Resetten";
+
+/* Reset warning */
+"settings.actions.warning" = "⚠️ Dit wist alle voortgang permanent!";
+
+/* Reset confirmation title */
+"reset.confirm.title" = "Spel Gereset!";
+
+/* Reset confirmation message */
+"reset.confirm.message" = "Je voortgang is gewist. Veel plezier met een nieuw begin! 🍻";
+
+/* OK button */
+"common.ok" = "OK";
+
+/* Naam van het bierfles-item in de winkel */
+"shop.item.bierfles.name" = "Bierfles";
+/* Beschrijving van het bierfles-item in de winkel */
+"shop.item.bierfles.description" = "Produceert 0,1 bier/sec";
+
+/* Naam van het bierkrat-item in de winkel */
+"shop.item.bierkrat.name" = "Bierkrat";
+/* Beschrijving van het bierkrat-item in de winkel */
+"shop.item.bierkrat.description" = "Produceert 0,3 bier/sec";
+
+/* Naam van het bierfust-item in de winkel */
+"shop.item.bierfust.name" = "Bierfust";
+/* Beschrijving van het bierfust-item in de winkel */
+"shop.item.bierfust.description" = "Produceert 1,0 bier/sec";
+
+/* Console debug print when offline time is below threshold */
+"bier.label.noEarnings" = "Offline tijd was slechts %d minuten en %d seconden. Geen bier verdiend.";
+
+/* Title of the offline earnings alert */
+"alert.welcomeBack.title" = "Welkom terug!";
+
+/* Message showing offline earnings */
+"bier.label.offlineEarnings" = "Je was %@ weg en je producten hebben %d bier geproduceerd!";
+
+/* Confirmation button in the offline alert */
+"button.proost" = "Proost! 🍻";
+
+"bier.label.timeAwayMinutes" = "%d minuten";

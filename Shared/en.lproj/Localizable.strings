@@ -1,0 +1,102 @@
+/* 
+  Localizable.strings
+  Tap the Cap
+
+  Created by Menno Spijker on 07/08/2025.
+  
+*/
+
+/* Label showing total beer count */
+"bier.label.count" = "Beer: %d";
+
+/* Label showing production per second */
+"bier.label.perSecond" = "%.1f beer/sec";
+
+/* Button title: open shop */
+"button.shop.open" = "Shop 🛒";
+
+/* Button title: close shop */
+"button.shop.close" = "Close Shop ✖️";
+
+/* Shop item buy button */
+"shop.item.buy" = "Buy (%d)";
+
+/* Offline earnings title */
+"offline.title" = "Welcome back!";
+
+/* Offline earnings message */
+"offline.message" = "You were away for %d minutes and your producers made %.1f beer!";
+
+/* Offline confirmation button */
+"offline.button.confirm" = "Cheers! 🍻";
+
+/* Settings title */
+"settings.title" = "Settings";
+
+/* Device info section title */
+"settings.device.title" = "Device Info";
+
+/* Device info: device type */
+"settings.device.type" = "Device: %@";
+
+/* Device info: rings */
+"settings.device.rings" = "Rings: %d (capacity: %d)";
+
+/* App info section title */
+"settings.app.title" = "App Info";
+
+/* App info: version */
+"settings.app.version" = "Version: %@ (%@)";
+
+/* App info: developer */
+"settings.app.dev" = "Developer: Pepper Technologies";
+
+/* App info: description */
+"settings.app.desc" = "BierClicker – The ultimate beer collection game! Tap, collect, and build your beer empire.";
+
+/* Game actions section title */
+"settings.actions.title" = "Game Actions";
+
+/* Reset button title */
+"settings.actions.reset" = "🔄 Reset Game";
+
+/* Reset warning */
+"settings.actions.warning" = "⚠️ This will permanently erase all progress!";
+
+/* Reset confirmation title */
+"reset.confirm.title" = "Game Reset!";
+
+/* Reset confirmation message */
+"reset.confirm.message" = "Your progress is cleared. Enjoy a fresh start! 🍻";
+
+/* OK button */
+"common.ok" = "OK";
+
+/* Name of the beer bottle shop item */
+"shop.item.bierfles.name" = "Beer Bottle";
+/* Description of the beer bottle shop item */
+"shop.item.bierfles.description" = "Produces 0.1 beer/sec";
+
+/* Name of the beer crate shop item */
+"shop.item.bierkrat.name" = "Beer Crate";
+/* Description of the beer crate shop item */
+"shop.item.bierkrat.description" = "Produces 0.3 beer/sec";
+
+/* Name of the beer keg shop item */
+"shop.item.bierfust.name" = "Beer Keg";
+/* Description of the beer keg shop item */
+"shop.item.bierfust.description" = "Produces 1.0 beer/sec";
+
+/* Console debug print when offline time is below threshold */
+"bier.label.noEarnings" = "Offline time was only %d minutes and %d seconds. No offline earnings awarded.";
+
+/* Title of the offline earnings alert */
+"alert.welcomeBack.title" = "Welcome back!";
+
+/* Message showing offline earnings */
+"bier.label.offlineEarnings" = "You were away for %@ and your products produced %d beer!";
+
+/* Confirmation button in the offline alert */
+"button.proost" = "Cheers! 🍻";
+
+"bier.label.timeAwayMinutes" = "%d minutes";

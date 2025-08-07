@@ -11,33 +11,22 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A959C4FD2E434CAE00DDC499 /* Exceptions for "Shared" folder in "Tap the Cap iOS" target */ = {
+		A90D35CE2E44CF82006C5DE5 /* Exceptions for "Shared" folder in "Tap the Cap iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"/Localized: Localizable.strings",
 				Assets.xcassets,
-				Renderer.swift,
-				Shaders.metal,
+				Localized.swift,
 			);
 			target = A959C4EB2E434CAE00DDC499 /* Tap the Cap iOS */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		A959C5012E434CAE00DDC499 /* Exceptions for "Shared" folder in "Copy Bundle Resources" phase from "Tap the Cap iOS" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = A959C4EA2E434CAE00DDC499 /* Resources */;
-			membershipExceptions = (
-				ShaderTypes.h,
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A959C4E32E434CAD00DDC499 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				A959C4FD2E434CAE00DDC499 /* Exceptions for "Shared" folder in "Tap the Cap iOS" target */,
-				A959C5012E434CAE00DDC499 /* Exceptions for "Shared" folder in "Copy Bundle Resources" phase from "Tap the Cap iOS" target */,
+				A90D35CE2E44CF82006C5DE5 /* Exceptions for "Shared" folder in "Tap the Cap iOS" target */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -123,6 +112,7 @@
 			knownRegions = (
 				en,
 				Base,
+				nl,
 			);
 			mainGroup = A959C4DE2E434CAB00DDC499;
 			minimizedProjectReferenceProxies = 1;
@@ -279,6 +269,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -333,6 +324,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};

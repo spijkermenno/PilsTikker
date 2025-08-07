@@ -712,7 +712,7 @@ class GameViewController_: UIViewController {
         
         // App description
         let descriptionLabel = UILabel()
-        descriptionLabel.text = "BierClicker - Het ultieme bier verzamel spel! Klik, verzamel en bouw je bier imperium op."
+        descriptionLabel.text = "Tap The Cap - Het ultieme bier verzamel spel! Klik, verzamel en bouw je bier imperium op."
         descriptionLabel.font = UIFont.systemFont(ofSize: 12)
         descriptionLabel.textColor = .gray
         descriptionLabel.numberOfLines = 0
