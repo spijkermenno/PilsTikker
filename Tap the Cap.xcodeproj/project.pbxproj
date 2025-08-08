@@ -7,23 +7,23 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		A959C4EC2E434CAE00DDC499 /* PilsTikker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PilsTikker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A959C4EC2E434CAE00DDC499 /* Tap the Cap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Tap the Cap.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A959C4FD2E434CAE00DDC499 /* Exceptions for "PilsTikker Shared" folder in "PilsTikker iOS" target */ = {
+		A959C4FD2E434CAE00DDC499 /* Exceptions for "Shared" folder in "Tap the Cap iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Assets.xcassets,
 				Renderer.swift,
 				Shaders.metal,
 			);
-			target = A959C4EB2E434CAE00DDC499 /* PilsTikker iOS */;
+			target = A959C4EB2E434CAE00DDC499 /* Tap the Cap iOS */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		A959C5012E434CAE00DDC499 /* Exceptions for "PilsTikker Shared" folder in "Copy Bundle Resources" phase from "PilsTikker iOS" target */ = {
+		A959C5012E434CAE00DDC499 /* Exceptions for "Shared" folder in "Copy Bundle Resources" phase from "Tap the Cap iOS" target */ = {
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			buildPhase = A959C4EA2E434CAE00DDC499 /* Resources */;
 			membershipExceptions = (
@@ -33,18 +33,18 @@
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A959C4E32E434CAD00DDC499 /* PilsTikker Shared */ = {
+		A959C4E32E434CAD00DDC499 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				A959C4FD2E434CAE00DDC499 /* Exceptions for "PilsTikker Shared" folder in "PilsTikker iOS" target */,
-				A959C5012E434CAE00DDC499 /* Exceptions for "PilsTikker Shared" folder in "Copy Bundle Resources" phase from "PilsTikker iOS" target */,
+				A959C4FD2E434CAE00DDC499 /* Exceptions for "Shared" folder in "Tap the Cap iOS" target */,
+				A959C5012E434CAE00DDC499 /* Exceptions for "Shared" folder in "Copy Bundle Resources" phase from "Tap the Cap iOS" target */,
 			);
-			path = "PilsTikker Shared";
+			path = Shared;
 			sourceTree = "<group>";
 		};
-		A959C4EE2E434CAE00DDC499 /* PilsTikker iOS */ = {
+		A959C4EE2E434CAE00DDC499 /* iOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "PilsTikker iOS";
+			path = iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -63,8 +63,8 @@
 		A959C4DE2E434CAB00DDC499 = {
 			isa = PBXGroup;
 			children = (
-				A959C4E32E434CAD00DDC499 /* PilsTikker Shared */,
-				A959C4EE2E434CAE00DDC499 /* PilsTikker iOS */,
+				A959C4E32E434CAD00DDC499 /* Shared */,
+				A959C4EE2E434CAE00DDC499 /* iOS */,
 				A959C4ED2E434CAE00DDC499 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -72,7 +72,7 @@
 		A959C4ED2E434CAE00DDC499 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A959C4EC2E434CAE00DDC499 /* PilsTikker.app */,
+				A959C4EC2E434CAE00DDC499 /* Tap the Cap.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,9 +80,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A959C4EB2E434CAE00DDC499 /* PilsTikker iOS */ = {
+		A959C4EB2E434CAE00DDC499 /* Tap the Cap iOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A959C4FE2E434CAE00DDC499 /* Build configuration list for PBXNativeTarget "PilsTikker iOS" */;
+			buildConfigurationList = A959C4FE2E434CAE00DDC499 /* Build configuration list for PBXNativeTarget "Tap the Cap iOS" */;
 			buildPhases = (
 				A959C4E82E434CAE00DDC499 /* Sources */,
 				A959C4E92E434CAE00DDC499 /* Frameworks */,
@@ -93,13 +93,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A959C4EE2E434CAE00DDC499 /* PilsTikker iOS */,
+				A959C4EE2E434CAE00DDC499 /* iOS */,
 			);
-			name = "PilsTikker iOS";
+			name = "Tap the Cap iOS";
 			packageProductDependencies = (
 			);
 			productName = "PilsTikker iOS";
-			productReference = A959C4EC2E434CAE00DDC499 /* PilsTikker.app */;
+			productReference = A959C4EC2E434CAE00DDC499 /* Tap the Cap.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -117,7 +117,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A959C4E22E434CAB00DDC499 /* Build configuration list for PBXProject "PilsTikker" */;
+			buildConfigurationList = A959C4E22E434CAB00DDC499 /* Build configuration list for PBXProject "Tap the Cap" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -131,7 +131,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A959C4EB2E434CAE00DDC499 /* PilsTikker iOS */,
+				A959C4EB2E434CAE00DDC499 /* Tap the Cap iOS */,
 			);
 		};
 /* End PBXProject section */
@@ -166,23 +166,24 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 327PJMKH2C;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Tap the Cap";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = nl.pepper.technologies.PilsTikker;
-				PRODUCT_NAME = PilsTikker;
+				PRODUCT_BUNDLE_IDENTIFIER = "pepper-technologies.nl.TapTheCap";
+				PRODUCT_NAME = "Tap the Cap";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "PilsTikker Shared/ShaderTypes.h";
+				SWIFT_OBJC_BRIDGING_HEADER = Shared/ShaderTypes.h;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -197,23 +198,24 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 327PJMKH2C;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Tap the Cap";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UIStatusBarHidden = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = nl.pepper.technologies.PilsTikker;
-				PRODUCT_NAME = PilsTikker;
+				PRODUCT_BUNDLE_IDENTIFIER = "pepper-technologies.nl.TapTheCap";
+				PRODUCT_NAME = "Tap the Cap";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "PilsTikker Shared/ShaderTypes.h";
+				SWIFT_OBJC_BRIDGING_HEADER = Shared/ShaderTypes.h;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
@@ -337,7 +339,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A959C4E22E434CAB00DDC499 /* Build configuration list for PBXProject "PilsTikker" */ = {
+		A959C4E22E434CAB00DDC499 /* Build configuration list for PBXProject "Tap the Cap" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A959C5022E434CAE00DDC499 /* Debug */,
@@ -346,7 +348,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A959C4FE2E434CAE00DDC499 /* Build configuration list for PBXNativeTarget "PilsTikker iOS" */ = {
+		A959C4FE2E434CAE00DDC499 /* Build configuration list for PBXNativeTarget "Tap the Cap iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A959C4FF2E434CAE00DDC499 /* Debug */,
