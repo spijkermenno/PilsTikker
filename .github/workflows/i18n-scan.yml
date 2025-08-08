@@ -1,0 +1,29 @@
+name: i18n scan
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
+
+      - name: Run i18n scan
+        run: |
+          bash scripts/find_hardcoded_strings.sh
+
+      - name: Upload results (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardcoded-strings
+          path: out/hardcoded_strings.txt
+          if-no-files-found: warn
+
