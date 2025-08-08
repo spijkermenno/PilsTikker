@@ -17,7 +17,7 @@ extension GameViewController {
             itemImageView.contentMode = .scaleAspectFit
 
             let itemSize = 35 * deviceConfig.bierdopScale
-            itemImageView.frame = CGRect(x: 0, y: 0, width: itemSize, height: itemSize)
+            itemImageView.frame = CGRect(x: -100, y: -100, width: itemSize, height: itemSize)
             itemImageView.isHidden = true
             itemImageView.tag = i
             contentContainer.addSubview(itemImageView)

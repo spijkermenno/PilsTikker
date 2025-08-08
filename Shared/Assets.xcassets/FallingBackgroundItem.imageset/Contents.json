@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "bierachtergrond_meer_schuim (1).png",
+      "filename" : "bubble.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "bierachtergrond_meer_schuim (1) 1.png",
+      "filename" : "bubble 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "bierachtergrond_meer_schuim (1) 2.png",
+      "filename" : "bubble 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
