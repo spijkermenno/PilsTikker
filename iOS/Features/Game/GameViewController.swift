@@ -61,31 +61,6 @@ public final class GameViewController: UIViewController {
             description: Localized.Shop.Item.bierfust.description,
             basePrice: 120,
             productionRate: 1.0
-        ),
-        
-        ShopItem(
-            id: "bierfles",
-            name: Localized.Shop.Item.bierfles.name,
-            imageName: "bierfles",
-            description: Localized.Shop.Item.bierfles.description,
-            basePrice: 12,
-            productionRate: 0.1
-        ),
-        ShopItem(
-            id: "bierkrat",
-            name: Localized.Shop.Item.bierkrat.name,
-            imageName: "bierkrat",
-            description: Localized.Shop.Item.bierkrat.description,
-            basePrice: 24,
-            productionRate: 0.3
-        ),
-        ShopItem(
-            id: "bierfust",
-            name: Localized.Shop.Item.bierfust.name,
-            imageName: "bierfust",
-            description: Localized.Shop.Item.bierfust.description,
-            basePrice: 120,
-            productionRate: 1.0
         )
     ]
 

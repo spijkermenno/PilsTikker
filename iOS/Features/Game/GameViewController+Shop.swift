@@ -7,12 +7,13 @@
 
 import UIKit
 
-extension GameViewController {
+extension GameViewController: UIGestureRecognizerDelegate {
 
     func setupShopUI() {
         let buttonSize: CGFloat = 60 * deviceConfig.shopScale
         let padding: CGFloat = 20
 
+        // Floating cart button
         shopButton = UIButton(type: .system)
         shopButton.frame = CGRect(
             x: view.bounds.width - buttonSize - padding,
@@ -27,9 +28,11 @@ extension GameViewController {
         shopButton.addTarget(self, action: #selector(toggleShop), for: .touchUpInside)
         view.addSubview(shopButton)
 
+        // Target size when expanded
         let shopWidth = 250 * deviceConfig.shopScale
         let shopHeight = 400 * deviceConfig.shopScale
 
+        // Collapsed seed bubble near the FAB
         shopView = UIView(frame: CGRect(
             x: shopButton.center.x - 25,
             y: shopButton.center.y - 25,
@@ -46,76 +49,177 @@ extension GameViewController {
         shopView.alpha = 0
         view.addSubview(shopView)
 
+        // ===== Scrollable content via Auto Layout (no manual frames) =====
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        shopView.addSubview(container)
+
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: shopView.topAnchor),
+            container.leadingAnchor.constraint(equalTo: shopView.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: shopView.trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: shopView.bottomAnchor)
+        ])
+
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.alwaysBounceVertical = true
+        scrollView.showsVerticalScrollIndicator = true
+        scrollView.contentInsetAdjustmentBehavior = .never
+        container.addSubview(scrollView)
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: container.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        let content = UIStackView()
+        content.axis = .vertical
+        content.spacing = 10
+        content.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(content)
+
+        NSLayoutConstraint.activate([
+            content.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 10),
+            content.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 10),
+            content.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -10),
+            content.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -10),
+            // Important: fix width to frame layout guide so intrinsic content decides height => proper scrolling
+            content.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -20)
+        ])
+
         // Header
         let headerFontSize = 18 * deviceConfig.shopScale
-        let shopHeader = UILabel(frame: CGRect(x: 0, y: 10, width: shopWidth, height: 30 * deviceConfig.shopScale))
-        shopHeader.text = "Winkel"
-        shopHeader.font = UIFont.boldSystemFont(ofSize: headerFontSize)
+        let shopHeader = UILabel()
         shopHeader.textAlignment = .center
-        shopView.addSubview(shopHeader)
+        shopHeader.font = .boldSystemFont(ofSize: headerFontSize)
+        shopHeader.textColor = .black
+        shopHeader.text = Localized.Shop.title
+        content.addArrangedSubview(shopHeader)
 
         // Divider
-        let divider = UIView(frame: CGRect(x: 15 * deviceConfig.shopScale, y: 45, width: shopWidth - 30, height: 1))
+        let divider = UIView()
         divider.backgroundColor = UIColor.gray.withAlphaComponent(0.3)
-        shopView.addSubview(divider)
+        divider.translatesAutoresizingMaskIntoConstraints = false
+        divider.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        content.addArrangedSubview(divider)
 
+        // Items stack
+        let itemsStack = UIStackView()
+        itemsStack.axis = .vertical
+        itemsStack.spacing = 10
+        itemsStack.translatesAutoresizingMaskIntoConstraints = false
+        content.addArrangedSubview(itemsStack)
+
+        // Build items (Auto Layout cells)
         for (index, item) in shopItems.enumerated() {
-            createShopItem(
+            let v = makeShopItemView(
                 image: UIImage(named: item.imageName),
                 title: item.name,
                 description: item.description,
                 price: item.basePrice,
-                tag: index + 1,
-                position: index
+                tag: index + 1
             )
+            itemsStack.addArrangedSubview(v)
         }
 
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap(_:)))
-        tapGesture.cancelsTouchesInView = false
-        view.addGestureRecognizer(tapGesture)
+        // Background tap (don’t steal from scrolling)
+        let backgroundTap = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundTap(_:)))
+        backgroundTap.cancelsTouchesInView = false
+        backgroundTap.delegate = self
+        view.addGestureRecognizer(backgroundTap)
+
+        // Make sure the tap waits for scroll’s pan (prevents “springy” jumps)
+        backgroundTap.require(toFail: scrollView.panGestureRecognizer)
+
+        // Store desired expanded frame for animation math (using local constants)
+        // We still use the original popup animation, but the inside layout is stable.
+        _ = shopWidth; _ = shopHeight
     }
 
-    private func createShopItem(image: UIImage?, title: String, description: String, price: Int, tag: Int, position: Int) {
+    // Only recognize background taps when not touching the shopView (helps avoid accidental triggers)
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        // If touch is inside shopView, ignore this background tap
+        if let view = touch.view, view.isDescendant(of: shopView) { return false }
+        return true
+    }
+
+    // MARK: - View Builders
+
+    private func makeShopItemView(image: UIImage?, title: String, description: String, price: Int, tag: Int) -> UIView {
         let itemHeight: CGFloat = 80
         let padding: CGFloat = 10
-        let yPosition: CGFloat = 50 + CGFloat(position) * (itemHeight + padding)
 
-        let itemView = UIView(frame: CGRect(x: 10, y: yPosition, width: 230, height: itemHeight))
-        itemView.backgroundColor = UIColor.white
+        let itemView = UIView()
+        itemView.translatesAutoresizingMaskIntoConstraints = false
+        itemView.backgroundColor = .white
         itemView.layer.cornerRadius = 10
         itemView.tag = tag
-        shopView.addSubview(itemView)
+        itemView.heightAnchor.constraint(equalToConstant: itemHeight).isActive = true
 
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(shopItemTapped(_:)))
         itemView.addGestureRecognizer(tapGesture)
 
-        let imageView = UIImageView(frame: CGRect(x: 10, y: 10, width: itemHeight - 20, height: itemHeight - 20))
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFit
         imageView.image = image
-        itemView.addSubview(imageView)
 
-        let titleLabel = UILabel(frame: CGRect(x: itemHeight, y: 10, width: itemView.bounds.width - itemHeight - 10, height: 20))
+        let titleLabel = UILabel()
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.text = title
         titleLabel.font = UIFont.boldSystemFont(ofSize: 16)
         titleLabel.tag = 100 + tag
-        itemView.addSubview(titleLabel)
+        titleLabel.textColor = .black
 
-        let descLabel = UILabel(frame: CGRect(x: itemHeight, y: 30, width: itemView.bounds.width - itemHeight - 10, height: 20))
+        let descLabel = UILabel()
+        descLabel.translatesAutoresizingMaskIntoConstraints = false
         descLabel.text = description
         descLabel.font = UIFont.systemFont(ofSize: 12)
         descLabel.textColor = .darkGray
-        itemView.addSubview(descLabel)
+        descLabel.numberOfLines = 1
 
-        let priceLabel = UILabel(frame: CGRect(x: itemHeight, y: 50, width: itemView.bounds.width - itemHeight - 10, height: 20))
+        let priceLabel = UILabel()
+        priceLabel.translatesAutoresizingMaskIntoConstraints = false
         priceLabel.text = "\(price) bier 🍺"
         priceLabel.font = UIFont.systemFont(ofSize: 14)
         priceLabel.textColor = .brown
+
+        itemView.addSubview(imageView)
+        itemView.addSubview(titleLabel)
+        itemView.addSubview(descLabel)
         itemView.addSubview(priceLabel)
 
+        NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: itemView.leadingAnchor, constant: padding),
+            imageView.centerYAnchor.constraint(equalTo: itemView.centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: itemHeight - 20),
+            imageView.heightAnchor.constraint(equalToConstant: itemHeight - 20),
+
+            titleLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: padding),
+            titleLabel.trailingAnchor.constraint(equalTo: itemView.trailingAnchor, constant: -padding),
+            titleLabel.topAnchor.constraint(equalTo: itemView.topAnchor, constant: 10),
+
+            descLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            descLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            descLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
+
+            priceLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+            priceLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
+            priceLabel.topAnchor.constraint(equalTo: descLabel.bottomAnchor, constant: 4)
+        ])
+
+        // Keep price for logic
         itemView.accessibilityValue = "\(price)"
+        return itemView
     }
 
+    // MARK: - State Updates
+
     func updateShopItems() {
+        // Only mutate labels/alpha; no layout/frames/contentSize here.
         for (index, item) in shopItems.enumerated() {
             let tag = index + 1
             guard let itemView = shopView.viewWithTag(tag) else { continue }
@@ -123,13 +227,17 @@ extension GameViewController {
                   let price = Int(priceString) else { continue }
 
             let canAfford = bierCount >= Double(price)
-            itemView.alpha = canAfford ? 1.0 : 0.6
+            let targetAlpha: CGFloat = canAfford ? 1.0 : 0.6
+            if itemView.alpha != targetAlpha { itemView.alpha = targetAlpha }
 
             if let titleLabel = itemView.viewWithTag(100 + tag) as? UILabel {
-                titleLabel.text = item.count > 0 ? "\(item.name) (\(item.count))" : item.name
+                let newTitle = item.count > 0 ? "\(item.name) (\(item.count))" : item.name
+                if titleLabel.text != newTitle { titleLabel.text = newTitle }
             }
         }
     }
+
+    // MARK: - Open / Close
 
     @objc func toggleShop() {
         isShopOpen.toggle()
@@ -144,10 +252,18 @@ extension GameViewController {
         if isShopOpen {
             shopButton.setImage(UIImage(systemName: "xmark"), for: .normal)
 
-            UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0, options: [], animations: {
+            UIView.animate(withDuration: 0.3,
+                           delay: 0,
+                           usingSpringWithDamping: 0.8,
+                           initialSpringVelocity: 0,
+                           options: [],
+                           animations: {
                 self.shopView.frame = CGRect(x: finalX, y: finalY, width: finalWidth, height: finalHeight)
                 self.shopView.layer.cornerRadius = 15
                 self.shopView.alpha = 1.0
+            }, completion: { _ in
+                // One-time refresh on open
+                self.updateShopItems()
             })
         } else {
             shopButton.setImage(UIImage(systemName: "cart"), for: .normal)
@@ -163,9 +279,9 @@ extension GameViewController {
                 self.shopView.alpha = 0
             }
         }
-
-        updateShopItems()
     }
+
+    // MARK: - Item tap
 
     @objc func shopItemTapped(_ gesture: UITapGestureRecognizer) {
         guard let itemView = gesture.view,
@@ -214,6 +330,7 @@ extension GameViewController {
             })
         }
 
+        // Update AFTER purchase (once)
         updateShopItems()
     }
 
