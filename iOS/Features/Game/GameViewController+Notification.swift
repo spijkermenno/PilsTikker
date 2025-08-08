@@ -15,11 +15,11 @@ extension GameViewController {
         let rightInnerPadding: CGFloat = shopButton.bounds.height
 
         let bannerHeight = shopButton.bounds.height
-        let bannerWidth = view.bounds.width - 2 * horizontalPadding
+        let bannerWidth = contentContainer.bounds.width - 2 * horizontalPadding
         let finalX = horizontalPadding
-        let finalY = view.bounds.height - bannerHeight - bottomPadding
+        let finalY = contentContainer.bounds.height - bannerHeight - bottomPadding
 
-        // Start at shopButton position
+        // Start at shopButton position (same Y as final)
         let startFrame = CGRect(
             x: shopButton.frame.origin.x,
             y: finalY,
@@ -33,7 +33,6 @@ extension GameViewController {
         banner.clipsToBounds = true
         banner.alpha = 1.0
 
-        // Label
         let label = UILabel()
         label.text = message
         label.textColor = .white
@@ -43,7 +42,9 @@ extension GameViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         banner.addSubview(label)
 
-        view.insertSubview(banner, belowSubview: shopButton)
+        contentContainer.addSubview(banner)
+        contentContainer.bringSubviewToFront(banner)
+        contentContainer.bringSubviewToFront(shopButton)
 
         NSLayoutConstraint.activate([
             label.leadingAnchor.constraint(equalTo: banner.leadingAnchor, constant: 16),
@@ -51,15 +52,12 @@ extension GameViewController {
             label.centerYAnchor.constraint(equalTo: banner.centerYAnchor)
         ])
 
-        // Haptic feedback
         let feedbackGenerator = UINotificationFeedbackGenerator()
         feedbackGenerator.notificationOccurred(.success)
 
-        // Expand leftward
         UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut], animations: {
             banner.frame = CGRect(x: finalX, y: finalY, width: bannerWidth, height: bannerHeight)
         }, completion: { _ in
-            // Retract after delay
             DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
                 UIView.animate(withDuration: 0.3, animations: {
                     banner.frame = startFrame

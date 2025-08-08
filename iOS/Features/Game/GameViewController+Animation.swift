@@ -20,7 +20,7 @@ extension GameViewController {
             itemImageView.frame = CGRect(x: 0, y: 0, width: itemSize, height: itemSize)
             itemImageView.isHidden = true
             itemImageView.tag = i
-            view.addSubview(itemImageView)
+            contentContainer.addSubview(itemImageView)
 
             floatingItemViews.append(itemImageView)
 
@@ -41,7 +41,6 @@ extension GameViewController {
 
     @objc private func updateFloatingItemPositions() {
         let visibleItemsCount = floatingItemOrder.count
-
         guard visibleItemsCount > 0 else { return }
 
         itemAngle += currentRotationSpeed
@@ -65,7 +64,7 @@ extension GameViewController {
                 let ringSpeedMultiplier = 1.0 + (Double(ringIndex) * 0.1)
                 let currentAngle = (itemAngle * ringSpeedMultiplier) + angleOffset
 
-                let centerX = view.center.x
+                let centerX = contentContainer.bounds.midX
                 let centerY = bierdopCenterY
 
                 let x = centerX + ringRadius * cos(currentAngle)

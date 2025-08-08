@@ -10,40 +10,63 @@ import UIKit
 extension GameViewController {
 
     func setupUI() {
-        // Bierdop with device-specific scaling
+        // Clicker (content area)
         let bierDopImage = UIImage(named: "bierdop")
-                
         imageView = UIImageView(image: bierDopImage)
         imageView.contentMode = .scaleAspectFit
-        
+
         let bierdopSize = 150 * deviceConfig.bierdopScale
-        imageView.frame = CGRect(x: 0, y: 0, width: bierdopSize, height: bierdopSize)
-        imageView.center = view.center
+        imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.isUserInteractionEnabled = true
-        view.addSubview(imageView)
+        contentContainer.addSubview(imageView)
+
+        // Ensure header has a layout so we can read its height
+        view.layoutIfNeeded()
+        let headerHeight = headerContainer.bounds.height
+
+        // Center X to the full view; center Y to the full view WITH header offset,
+        // so visual center is corrected by half the header height.
+        NSLayoutConstraint.activate([
+            imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: headerHeight / 2),
+            imageView.widthAnchor.constraint(equalToConstant: bierdopSize),
+            imageView.heightAnchor.constraint(equalToConstant: bierdopSize),
+        ])
 
         baseRadius = deviceConfig.baseRadius
         currentRadius = baseRadius
+
+        // Resolve frames to compute accurate center for animations
+        view.layoutIfNeeded()
         bierdopCenterY = imageView.center.y
 
-        // Labels (scale font size on larger devices)
+        // Labels in header
         let labelFontScale = deviceConfig.bierdopScale
 
-        bierCountLabel = UILabel(frame: CGRect(x: 0, y: 60, width: view.bounds.width, height: 40))
+        bierCountLabel = UILabel()
         bierCountLabel.textAlignment = .center
         bierCountLabel.textColor = .brown
         bierCountLabel.font = UIFont.boldSystemFont(ofSize: 24 * labelFontScale)
-        bierCountLabel.text = "Bier: 0"
-        view.addSubview(bierCountLabel)
+        bierCountLabel.translatesAutoresizingMaskIntoConstraints = false
+        headerContainer.addSubview(bierCountLabel)
 
-        perSecondLabel = UILabel(frame: CGRect(x: 0, y: 100, width: view.bounds.width, height: 30))
+        perSecondLabel = UILabel()
         perSecondLabel.textAlignment = .center
         perSecondLabel.textColor = .brown
         perSecondLabel.font = UIFont.systemFont(ofSize: 16 * labelFontScale)
-        perSecondLabel.text = "0.0 bier/sec"
-        view.addSubview(perSecondLabel)
+        perSecondLabel.translatesAutoresizingMaskIntoConstraints = false
+        headerContainer.addSubview(perSecondLabel)
 
-        // Tap gesture
+        NSLayoutConstraint.activate([
+            bierCountLabel.topAnchor.constraint(equalTo: headerContainer.safeAreaLayoutGuide.topAnchor, constant: 8),
+            bierCountLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: 16),
+            bierCountLabel.trailingAnchor.constraint(equalTo: headerContainer.trailingAnchor, constant: -16),
+
+            perSecondLabel.topAnchor.constraint(equalTo: bierCountLabel.bottomAnchor, constant: 4),
+            perSecondLabel.leadingAnchor.constraint(equalTo: headerContainer.leadingAnchor, constant: 16),
+            perSecondLabel.trailingAnchor.constraint(equalTo: headerContainer.trailingAnchor, constant: -16),
+        ])
+
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         imageView.addGestureRecognizer(tapGesture)
 
@@ -51,9 +74,9 @@ extension GameViewController {
     }
 
     func updateUI() {
-        bierCountLabel.text = "Bier: \(Int(bierCount))"
+        bierCountLabel.text = Localized.bierCount(Int(bierCount))
         let totalPerSecond = getTotalProductionRate()
-        perSecondLabel.text = "\(String(format: "%.1f", totalPerSecond)) bier/sec"
+        perSecondLabel.text = Localized.bierPerSecond(totalPerSecond)
 
         if isShopOpen {
             updateShopItems()

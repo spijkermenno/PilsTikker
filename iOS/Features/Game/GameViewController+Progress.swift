@@ -61,7 +61,7 @@ extension GameViewController {
 
     private func showOfflineEarnings(amount: Double, timeAway: Double) {
         let threshold: Double = 30.0 // minutes
-        
+
         guard timeAway > threshold else {
             let totalSeconds = Int(timeAway * 60)
             let minutes = totalSeconds / 60
@@ -75,11 +75,11 @@ extension GameViewController {
         let earnedBier = productionPerMinute * effectiveTime * 0.10
 
         let timeAwayText = Localized.timeAwayText(Int(timeAway))
-        let title = Localized.welcomeBack
+        let _ = Localized.welcomeBack
         let message = Localized.offlineEarnings(timeAwayText, Int(earnedBier))
 
         showShopNotification(message: message)
-        
+
         bierCount += earnedBier
     }
 }

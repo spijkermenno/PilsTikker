@@ -116,6 +116,9 @@ enum Localized {
     // MARK: - Shop Items
 
     enum Shop {
+        
+        static let title = NSLocalizedString("shop.title", comment: "Title of the shop screen")
+        
         enum Item {
             enum bierfles {
                 static let name = NSLocalizedString("shop.item.bierfles.name", comment: "Name of the beer bottle shop item")
