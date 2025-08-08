@@ -100,8 +100,22 @@ public final class GameViewController: UIViewController {
 
         deviceConfig = getDeviceConfiguration()
         setupRingCapacities()
-        view.backgroundColor = UIColor(red: 0.76, green: 0.65, blue: 0.48, alpha: 1.0)
+        
+        // beer background
+        let backgroundImage = UIImage(named: "bierachtergrond")
+        let backgroundImageView = UIImageView(image: backgroundImage)
+        backgroundImageView.contentMode = .scaleAspectFill
+        backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(backgroundImageView)
+        view.sendSubviewToBack(backgroundImageView)
 
+        NSLayoutConstraint.activate([
+            backgroundImageView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundImageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            backgroundImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundImageView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+        
         loadProgress()
         setupUI()
         setupFloatingItemsAnimation()

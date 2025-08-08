@@ -75,15 +75,11 @@ extension GameViewController {
         let earnedBier = productionPerMinute * effectiveTime * 0.10
 
         let timeAwayText = Localized.timeAwayText(Int(timeAway))
-        
-        let alertController = UIAlertController(
-            title: Localized.welcomeBack,
-            message: Localized.offlineEarnings(timeAwayText, Int(earnedBier)),
-            preferredStyle: .alert
-        )
-        alertController.addAction(UIAlertAction(title: Localized.proost, style: .default))
-        present(alertController, animated: true)
+        let title = Localized.welcomeBack
+        let message = Localized.offlineEarnings(timeAwayText, Int(earnedBier))
 
+        showShopNotification(message: message)
+        
         bierCount += earnedBier
     }
 }

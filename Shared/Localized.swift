@@ -8,101 +8,109 @@
 import Foundation
 
 enum Localized {
-    
+
     // MARK: - Labels
     
     static func bierCount(_ count: Int) -> String {
-        String(format: NSLocalizedString("bier.label.count", comment: ""), count)
+        String(format: NSLocalizedString("bier.label.count", comment: "Label showing total beer count"), count)
     }
 
     static func bierPerSecond(_ rate: Double) -> String {
-        String(format: NSLocalizedString("bier.label.perSecond", comment: ""), rate)
+        String(format: NSLocalizedString("bier.label.perSecond", comment: "Label showing production per second"), rate)
     }
 
-    static var noOfflineEarnings: String {
-        NSLocalizedString("bier.label.noEarnings", comment: "")
+    static func noEarningsTime(_ minutes: Int, _ seconds: Int) -> String {
+        String(format: NSLocalizedString("bier.label.noEarnings", comment: "Offline time too short"), minutes, seconds)
     }
 
     static func offlineEarnings(_ timeAway: String, _ amount: Int) -> String {
-        String(format: NSLocalizedString("bier.label.offlineEarnings", comment: ""), timeAway, amount)
+        String(format: NSLocalizedString("bier.label.offlineEarnings", comment: "Message showing offline beer earnings"), timeAway, amount)
     }
 
-    static func offlineDuration(_ minutes: Int) -> String {
-        String(format: NSLocalizedString("bier.label.minutesAway", comment: ""), minutes)
+    static func timeAwayText(_ minutes: Int) -> String {
+        String(format: NSLocalizedString("bier.label.timeAwayMinutes", comment: "Used to display how long the user was away in minutes"), minutes)
     }
 
     // MARK: - Buttons
-    
+
     static var shopOpen: String {
-        NSLocalizedString("button.shop.open", comment: "")
+        NSLocalizedString("button.shop.open", comment: "Button title: open shop")
     }
 
     static var shopClose: String {
-        NSLocalizedString("button.shop.close", comment: "")
+        NSLocalizedString("button.shop.close", comment: "Button title: close shop")
     }
 
     static var proost: String {
-        NSLocalizedString("button.proost", comment: "")
+        NSLocalizedString("button.proost", comment: "Confirmation button in the offline alert")
     }
 
-    static var reset: String {
-        NSLocalizedString("button.reset", comment: "")
-    }
-
-    static var cancel: String {
-        NSLocalizedString("button.cancel", comment: "")
+    static func shopBuy(_ price: Int) -> String {
+        String(format: NSLocalizedString("shop.item.buy", comment: "Shop item buy button"), price)
     }
 
     // MARK: - Alerts
 
     static var welcomeBack: String {
-        NSLocalizedString("alert.welcomeBack.title", comment: "")
-    }
-
-    static var noEarningsTitle: String {
-        NSLocalizedString("alert.noEarnings.title", comment: "")
-    }
-
-    static var resetTitle: String {
-        NSLocalizedString("alert.reset.title", comment: "")
-    }
-
-    static var resetMessage: String {
-        NSLocalizedString("alert.reset.message", comment: "")
+        NSLocalizedString("alert.welcomeBack.title", comment: "Title of the offline earnings alert")
     }
 
     static var resetConfirmationTitle: String {
-        NSLocalizedString("alert.reset.confirm.title", comment: "")
+        NSLocalizedString("reset.confirm.title", comment: "Reset confirmation alert title")
     }
 
     static var resetConfirmationMessage: String {
-        NSLocalizedString("alert.reset.confirm.message", comment: "")
+        NSLocalizedString("reset.confirm.message", comment: "Reset confirmation alert message")
     }
 
     // MARK: - Settings
 
     static var settingsTitle: String {
-        NSLocalizedString("settings.title", comment: "")
+        NSLocalizedString("settings.title", comment: "Settings title")
     }
 
-    static var deviceInfo: String {
-        NSLocalizedString("settings.deviceInfo", comment: "")
+    static var deviceTitle: String {
+        NSLocalizedString("settings.device.title", comment: "Device info section title")
     }
 
-    static var appInfo: String {
-        NSLocalizedString("settings.appInfo", comment: "")
+    static func deviceType(_ name: String) -> String {
+        String(format: NSLocalizedString("settings.device.type", comment: "Device info: type"), name)
     }
 
-    static var gameActions: String {
-        NSLocalizedString("settings.gameActions", comment: "")
+    static func deviceRings(_ count: Int, _ capacity: Int) -> String {
+        String(format: NSLocalizedString("settings.device.rings", comment: "Device info: rings and capacity"), count, capacity)
+    }
+
+    static var appTitle: String {
+        NSLocalizedString("settings.app.title", comment: "App info section title")
+    }
+
+    static func appVersion(_ version: String, _ build: String) -> String {
+        String(format: NSLocalizedString("settings.app.version", comment: "App info: version string"), version, build)
+    }
+
+    static var developer: String {
+        NSLocalizedString("settings.app.dev", comment: "App info: developer")
+    }
+
+    static var appDescription: String {
+        NSLocalizedString("settings.app.desc", comment: "App info: description")
+    }
+
+    static var gameActionsTitle: String {
+        NSLocalizedString("settings.actions.title", comment: "Game actions section title")
+    }
+
+    static var resetButton: String {
+        NSLocalizedString("settings.actions.reset", comment: "Reset button title")
     }
 
     static var resetWarning: String {
-        NSLocalizedString("settings.resetWarning", comment: "")
+        NSLocalizedString("settings.actions.warning", comment: "Reset warning")
     }
 
     static var credits: String {
-        NSLocalizedString("settings.credits", comment: "")
+        NSLocalizedString("settings.credits", comment: "Credits label")
     }
 
     // MARK: - Shop Items
@@ -123,14 +131,10 @@ enum Localized {
             }
         }
     }
-    
-    static func noEarningsTime(_ minutes: Int, _ seconds: Int) -> String {
-        String(format: NSLocalizedString("bier.label.noEarnings", comment: ""), minutes, seconds)
+
+    // MARK: - Splash
+
+    static var splashDisclaimer: String {
+        NSLocalizedString("splash.disclaimer", comment: "Splash screen disclaimer")
     }
-    
-    static func timeAwayText(_ minutes: Int) -> String {
-        String(format: NSLocalizedString("bier.label.timeAwayMinutes", comment: "Used to display how long the user was away in minutes"), minutes)
-    }
-    
-    
 }
