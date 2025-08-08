@@ -1,53 +1,69 @@
 //
 //  Shaders.metal
-//  PilsTikker Shared
+//  Tap the Cap iOS
 //
-//  Created by Menno Spijker on 06/08/2025.
+//  Created by Menno Spijker on 09/08/2025.
 //
-
-// File for Metal kernel and shader functions
 
 #include <metal_stdlib>
-#include <simd/simd.h>
-
-// Including header shared between this Metal shader code and Swift/C code executing Metal API commands
-#import "ShaderTypes.h"
-
 using namespace metal;
 
-typedef struct
-{
-    float3 position [[attribute(VertexAttributePosition)]];
-    float2 texCoord [[attribute(VertexAttributeTexcoord)]];
-} Vertex;
+struct VertexIn {
+    float2 position [[attribute(0)]];
+    float2 uv       [[attribute(1)]];
+};
 
-typedef struct
-{
+struct InstanceData {
+    float2 position;
+    float  scale;
+    float  rotation;
+    float4 color;
+};
+
+struct VSOut {
     float4 position [[position]];
-    float2 texCoord;
-} ColorInOut;
+    float2 uv;
+    float4 color;
+};
 
-vertex ColorInOut vertexShader(Vertex in [[stage_in]],
-                               constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]])
-{
-    ColorInOut out;
+vertex VSOut vs_main(
+    const device VertexIn*      verts   [[buffer(0)]],
+    constant float2&            viewport[[buffer(1)]],
+    const device InstanceData*  insts   [[buffer(2)]],
+    uint vid [[vertex_id]],
+    uint iid [[instance_id]]
+) {
+    VertexIn v = verts[vid];
+    InstanceData inst = insts[iid];
 
-    float4 position = float4(in.position, 1.0);
-    out.position = uniforms.projectionMatrix * uniforms.modelViewMatrix * position;
-    out.texCoord = in.texCoord;
+    // rotate & scale quad in pixel space
+    float2 p = v.position * inst.scale * 42.0; // 42 px base size; tweak if you want
+    float s = sin(inst.rotation);
+    float c = cos(inst.rotation);
+    float2 pr = float2(
+        p.x * c - p.y * s,
+        p.x * s + p.y * c
+    );
 
-    return out;
+    // move to instance center (pixels) then to NDC
+    float2 pixel = inst.position + pr;
+    float2 ndc = float2(
+        (pixel.x / viewport.x) * 2.0 - 1.0,
+        (pixel.y / viewport.y) * 2.0 - 1.0
+    );
+
+    VSOut o;
+    // Metal's y is +up; UIKit coord is +down, so flip
+    o.position = float4(ndc.x, -ndc.y, 0, 1);
+    o.uv = v.uv;
+    o.color = inst.color;
+    return o;
 }
 
-fragment float4 fragmentShader(ColorInOut in [[stage_in]],
-                               constant Uniforms & uniforms [[ buffer(BufferIndexUniforms) ]],
-                               texture2d<half> colorMap     [[ texture(TextureIndexColor) ]])
+fragment float4 fs_main(VSOut in [[stage_in]],
+                        texture2d<float> tex [[texture(0)]])
 {
-    constexpr sampler colorSampler(mip_filter::linear,
-                                   mag_filter::linear,
-                                   min_filter::linear);
-
-    half4 colorSample   = colorMap.sample(colorSampler, in.texCoord.xy);
-
-    return float4(colorSample);
+    constexpr sampler s(address::clamp_to_edge, filter::linear);
+    float4 c = tex.sample(s, in.uv);
+    return float4(c.rgb, c.a) * in.color;
 }
