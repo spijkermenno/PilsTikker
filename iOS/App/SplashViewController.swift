@@ -1,6 +1,6 @@
 //
 //  SplashViewController.swift
-//  Tap the Cap iOS
+//  Cheesery iOS
 //
 //  Created by Menno Spijker on 07/08/2025.
 //

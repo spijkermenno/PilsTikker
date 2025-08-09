@@ -1,6 +1,6 @@
 //
 //  FallingBackgroundRenderer.swift
-//  Tap the Cap iOS
+//  Cheesery iOS
 //
 //  Created by Menno Spijker on 09/08/2025.
 //

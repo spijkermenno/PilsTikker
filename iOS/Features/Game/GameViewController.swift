@@ -1,6 +1,6 @@
 //
 //  GameViewController.swift
-//  Tap The Cap
+//  Cheesery 
 //
 //  Created by Menno Spijker on 07/08/2025.
 //
@@ -130,7 +130,7 @@ public final class GameViewController: UIViewController {
 
         // Choose background style here:
         setupContainers(style: .full(image: "background"))
-        // setupContainers(style: .split(header: "headerBackground", content: "background"))
+        //setupContainers(style: .split(header: "headerBackground", content: "containerBackground"))
 
         // ===== Metal background rain behind content =====
         setupMetalRainLayer()

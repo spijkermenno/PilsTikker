@@ -1,6 +1,6 @@
 //
 //  Localized.swift
-//  Tap the Cap
+//  Cheesery 
 //
 //  Created by Menno Spijker on 07/08/2025.
 //

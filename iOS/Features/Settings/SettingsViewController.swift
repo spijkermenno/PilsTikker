@@ -1,6 +1,6 @@
 //
 //  SettingsViewController.swift
-//  Tap the Cap iOS
+//  Cheesery iOS
 //
 //  Created by Menno Spijker on 08/08/2025.
 //
